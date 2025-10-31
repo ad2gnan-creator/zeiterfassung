@@ -334,6 +334,27 @@ async def send_daily_report(date: Optional[str] = None):
     return {"message": f"CSV-Report für {date} erfolgreich versendet", "date": date}
 
 
+@api_router.get("/download-csv")
+async def download_csv(date: Optional[str] = None):
+    """CSV-Datei herunterladen"""
+    if not date:
+        date = datetime.now().strftime("%Y-%m-%d")
+    
+    # Generate CSV
+    csv_data = await generate_csv_data(date)
+    if not csv_data:
+        raise HTTPException(status_code=404, detail=f"Keine Zeiterfassungsdaten für {date} gefunden")
+    
+    # Return CSV as downloadable file
+    return StreamingResponse(
+        io.StringIO(csv_data),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=zeiterfassung_{date}.csv"
+        }
+    )
+
+
 @api_router.get("/")
 async def root():
     return {"message": "Zeiterfassungs-App API"}
