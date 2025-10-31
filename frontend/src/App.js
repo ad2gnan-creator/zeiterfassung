@@ -413,6 +413,12 @@ function SettingsView({ settings, setSettings, handleSaveSettings, loading }) {
     }
   };
 
+  const handleDownloadCSV = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const downloadUrl = `${API}/download-csv?date=${today}`;
+    window.open(downloadUrl, '_blank');
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-xl shadow-xl p-8">
