@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -6,7 +6,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
 
@@ -26,45 +26,209 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
+# ========== Models ==========
+
+# Employee Models
+class Employee(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
+    personalnummer: str
+    vorname: str
+    nachname: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class EmployeeCreate(BaseModel):
+    personalnummer: str
+    vorname: str
+    nachname: str
+
+class EmployeeUpdate(BaseModel):
+    personalnummer: Optional[str] = None
+    vorname: Optional[str] = None
+    nachname: Optional[str] = None
+
+
+# Time Entry Models
+class TimeEntry(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    personalnummer: str
+    button_type: str  # "Arbeitsbeginn", "Pause", "Pausenende", "Ende"
+    datum: str  # Format: YYYY-MM-DD
+    uhrzeit: str  # Format: HH:MM:SS
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+class TimeEntryCreate(BaseModel):
+    personalnummer: str
+    button_type: str
 
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
+# Settings Models
+class Settings(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
+    id: str = Field(default="settings")
+    email_sender: Optional[str] = None
+    email_password: Optional[str] = None
+    email_recipient: Optional[str] = None
+    send_time: str = "18:00"  # Default send time
+    last_send_date: Optional[str] = None
+
+class SettingsUpdate(BaseModel):
+    email_sender: Optional[str] = None
+    email_password: Optional[str] = None
+    email_recipient: Optional[str] = None
+    send_time: Optional[str] = None
+
+
+# ========== Employee Endpoints ==========
+
+@api_router.post("/employees", response_model=Employee)
+async def create_employee(employee: EmployeeCreate):
+    """Neuen Mitarbeiter anlegen"""
+    # Check if personalnummer already exists
+    existing = await db.employees.find_one({"personalnummer": employee.personalnummer}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Personalnummer existiert bereits")
+    
+    employee_obj = Employee(**employee.model_dump())
+    doc = employee_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    
+    await db.employees.insert_one(doc)
+    return employee_obj
+
+
+@api_router.get("/employees", response_model=List[Employee])
+async def get_employees():
+    """Alle Mitarbeiter abrufen"""
+    employees = await db.employees.find({}, {"_id": 0}).to_list(1000)
+    
+    for emp in employees:
+        if isinstance(emp.get('created_at'), str):
+            emp['created_at'] = datetime.fromisoformat(emp['created_at'])
+    
+    return employees
+
+
+@api_router.put("/employees/{employee_id}", response_model=Employee)
+async def update_employee(employee_id: str, employee_update: EmployeeUpdate):
+    """Mitarbeiter bearbeiten"""
+    existing = await db.employees.find_one({"id": employee_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden")
+    
+    # If personalnummer is being updated, check if it's unique
+    if employee_update.personalnummer and employee_update.personalnummer != existing['personalnummer']:
+        duplicate = await db.employees.find_one(
+            {"personalnummer": employee_update.personalnummer, "id": {"$ne": employee_id}},
+            {"_id": 0}
+        )
+        if duplicate:
+            raise HTTPException(status_code=400, detail="Personalnummer existiert bereits")
+    
+    update_data = {k: v for k, v in employee_update.model_dump().items() if v is not None}
+    
+    if update_data:
+        await db.employees.update_one({"id": employee_id}, {"$set": update_data})
+    
+    updated = await db.employees.find_one({"id": employee_id}, {"_id": 0})
+    if isinstance(updated.get('created_at'), str):
+        updated['created_at'] = datetime.fromisoformat(updated['created_at'])
+    
+    return Employee(**updated)
+
+
+@api_router.delete("/employees/{employee_id}")
+async def delete_employee(employee_id: str):
+    """Mitarbeiter löschen"""
+    result = await db.employees.delete_one({"id": employee_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden")
+    
+    return {"message": "Mitarbeiter erfolgreich gelöscht"}
+
+
+# ========== Time Entry Endpoints ==========
+
+@api_router.post("/time-entries", response_model=TimeEntry)
+async def create_time_entry(entry: TimeEntryCreate):
+    """Zeitstempel erfassen"""
+    # Verify employee exists
+    employee = await db.employees.find_one({"personalnummer": entry.personalnummer}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden")
+    
+    now = datetime.now()
+    entry_obj = TimeEntry(
+        personalnummer=entry.personalnummer,
+        button_type=entry.button_type,
+        datum=now.strftime("%Y-%m-%d"),
+        uhrzeit=now.strftime("%H:%M:%S")
+    )
+    
+    doc = entry_obj.model_dump()
     doc['timestamp'] = doc['timestamp'].isoformat()
     
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
+    await db.time_entries.insert_one(doc)
+    return entry_obj
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
+
+@api_router.get("/time-entries", response_model=List[TimeEntry])
+async def get_time_entries(datum: Optional[str] = None):
+    """Zeitstempel abrufen (optional gefiltert nach Datum)"""
+    query = {}
+    if datum:
+        query['datum'] = datum
     
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
+    entries = await db.time_entries.find(query, {"_id": 0}).sort("timestamp", -1).to_list(10000)
     
-    return status_checks
+    for entry in entries:
+        if isinstance(entry.get('timestamp'), str):
+            entry['timestamp'] = datetime.fromisoformat(entry['timestamp'])
+    
+    return entries
+
+
+# ========== Settings Endpoints ==========
+
+@api_router.get("/settings", response_model=Settings)
+async def get_settings():
+    """Email-Einstellungen abrufen"""
+    settings = await db.settings.find_one({"id": "settings"}, {"_id": 0})
+    
+    if not settings:
+        # Create default settings
+        default_settings = Settings()
+        doc = default_settings.model_dump()
+        await db.settings.insert_one(doc)
+        return default_settings
+    
+    return Settings(**settings)
+
+
+@api_router.put("/settings", response_model=Settings)
+async def update_settings(settings_update: SettingsUpdate):
+    """Email-Einstellungen aktualisieren"""
+    update_data = {k: v for k, v in settings_update.model_dump().items() if v is not None}
+    
+    if update_data:
+        await db.settings.update_one(
+            {"id": "settings"},
+            {"$set": update_data},
+            upsert=True
+        )
+    
+    settings = await db.settings.find_one({"id": "settings"}, {"_id": 0})
+    return Settings(**settings)
+
+
+@api_router.get("/")
+async def root():
+    return {"message": "Zeiterfassungs-App API"}
+
 
 # Include the router in the main app
 app.include_router(api_router)
