@@ -394,6 +394,25 @@ function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, 
 
 // Settings View Component
 function SettingsView({ settings, setSettings, handleSaveSettings, loading }) {
+  const [testLoading, setTestLoading] = useState(false);
+  const [testMessage, setTestMessage] = useState('');
+
+  const handleTestEmail = async () => {
+    setTestLoading(true);
+    setTestMessage('');
+    try {
+      const response = await axios.post(`${API}/send-daily-report`);
+      setTestMessage({ text: response.data.message, type: 'success' });
+    } catch (error) {
+      setTestMessage({ 
+        text: error.response?.data?.detail || 'Fehler beim Email-Versand', 
+        type: 'error' 
+      });
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-xl shadow-xl p-8">
@@ -468,6 +487,26 @@ function SettingsView({ settings, setSettings, handleSaveSettings, loading }) {
             {loading ? 'Wird gespeichert...' : 'Einstellungen speichern'}
           </button>
         </form>
+
+        {/* Test Email Button */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <h3 className="font-semibold text-gray-800 mb-3">📧 Email-Versand testen</h3>
+          <button
+            data-testid="btn-test-email"
+            onClick={handleTestEmail}
+            disabled={testLoading}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {testLoading ? 'Wird gesendet...' : 'Tages-Report jetzt senden'}
+          </button>
+          {testMessage && (
+            <div className={`mt-3 p-3 rounded-lg ${
+              testMessage.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+            }`}>
+              {testMessage.text}
+            </div>
+          )}
+        </div>
 
         <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <h3 className="font-semibold text-blue-900 mb-2">ℹ️ Hinweis</h3>
