@@ -82,6 +82,7 @@ class Settings(BaseModel):
     email_recipient: Optional[str] = None
     send_time: str = "18:00"  # Default send time
     last_send_date: Optional[str] = None
+    last_download_datetime: Optional[str] = None  # Letzter Download-Zeitpunkt
 
 class SettingsUpdate(BaseModel):
     email_sender: Optional[str] = None
