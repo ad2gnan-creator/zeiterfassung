@@ -413,10 +413,32 @@ function SettingsView({ settings, setSettings, handleSaveSettings, loading }) {
     }
   };
 
-  const handleDownloadCSV = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const downloadUrl = `${API}/download-csv?date=${today}`;
-    window.open(downloadUrl, '_blank');
+  const handleDownloadCSV = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const response = await axios.get(`${API}/download-csv?date=${today}`, {
+        responseType: 'blob'
+      });
+      
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `zeiterfassung_${today}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      setTestMessage({ text: 'CSV-Datei erfolgreich heruntergeladen!', type: 'success' });
+      setTimeout(() => setTestMessage(''), 3000);
+    } catch (error) {
+      setTestMessage({ 
+        text: error.response?.data?.detail || 'Keine Daten für heute vorhanden', 
+        type: 'error' 
+      });
+      setTimeout(() => setTestMessage(''), 3000);
+    }
   };
 
   return (
