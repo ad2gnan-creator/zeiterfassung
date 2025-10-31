@@ -494,6 +494,21 @@ function SettingsView({ settings, setSettings, handleSaveSettings, loading }) {
           </button>
         </form>
 
+        {/* CSV Download Button */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <h3 className="font-semibold text-gray-800 mb-3">📥 CSV-Datei herunterladen</h3>
+          <button
+            data-testid="btn-download-csv"
+            onClick={handleDownloadCSV}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+          >
+            📄 Heutige CSV-Datei herunterladen
+          </button>
+          <p className="text-sm text-gray-500 mt-2">
+            Lädt die Zeiterfassungen des heutigen Tages als CSV-Datei herunter (ohne Email-Versand).
+          </p>
+        </div>
+
         {/* Test Email Button */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <h3 className="font-semibold text-gray-800 mb-3">📧 Email-Versand testen</h3>
