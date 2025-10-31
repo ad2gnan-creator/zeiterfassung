@@ -231,6 +231,108 @@ async def update_settings(settings_update: SettingsUpdate):
     return Settings(**settings)
 
 
+# ========== CSV Export & Email Functions ==========
+
+async def generate_csv_data(date: Optional[str] = None) -> str:
+    """Generate CSV data for time entries"""
+    if not date:
+        date = datetime.now().strftime("%Y-%m-%d")
+    
+    entries = await db.time_entries.find({"datum": date}, {"_id": 0}).to_list(10000)
+    
+    if not entries:
+        return None
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=';')
+    
+    # Write header
+    writer.writerow(['Personalnummer', 'Button-Art', 'Datum', 'Uhrzeit'])
+    
+    # Write data
+    for entry in entries:
+        writer.writerow([
+            entry['personalnummer'],
+            entry['button_type'],
+            entry['datum'],
+            entry['uhrzeit']
+        ])
+    
+    return output.getvalue()
+
+
+async def send_email_with_csv(settings: Settings, csv_data: str, date: str):
+    """Send email with CSV attachment via Gmail SMTP"""
+    if not all([settings.email_sender, settings.email_password, settings.email_recipient]):
+        raise HTTPException(status_code=400, detail="Email-Einstellungen unvollständig")
+    
+    # Create message
+    msg = MIMEMultipart()
+    msg['From'] = settings.email_sender
+    msg['To'] = settings.email_recipient
+    msg['Subject'] = f'Zeiterfassung {date}'
+    
+    # Email body
+    body = f"""Hallo,
+
+anbei finden Sie die Zeiterfassungsdaten vom {date}.
+
+Mit freundlichen Grüßen
+Zeiterfassungs-System
+"""
+    msg.attach(MIMEText(body, 'plain'))
+    
+    # Attach CSV
+    csv_attachment = MIMEApplication(csv_data.encode('utf-8'), _subtype='csv')
+    csv_attachment.add_header('Content-Disposition', 'attachment', filename=f'zeiterfassung_{date}.csv')
+    msg.attach(csv_attachment)
+    
+    # Send email via Gmail SMTP
+    try:
+        await aiosmtplib.send(
+            msg,
+            hostname='smtp.gmail.com',
+            port=587,
+            start_tls=True,
+            username=settings.email_sender,
+            password=settings.email_password,
+        )
+    except Exception as e:
+        logger.error(f"Email sending failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Email-Versand fehlgeschlagen: {str(e)}")
+
+
+@api_router.post("/send-daily-report")
+async def send_daily_report(date: Optional[str] = None):
+    """Manuell CSV-Report per Email versenden"""
+    if not date:
+        date = datetime.now().strftime("%Y-%m-%d")
+    
+    # Get settings
+    settings = await db.settings.find_one({"id": "settings"}, {"_id": 0})
+    if not settings:
+        raise HTTPException(status_code=400, detail="Keine Email-Einstellungen konfiguriert")
+    
+    settings_obj = Settings(**settings)
+    
+    # Generate CSV
+    csv_data = await generate_csv_data(date)
+    if not csv_data:
+        raise HTTPException(status_code=404, detail=f"Keine Zeiterfassungsdaten für {date} gefunden")
+    
+    # Send email
+    await send_email_with_csv(settings_obj, csv_data, date)
+    
+    # Update last send date
+    await db.settings.update_one(
+        {"id": "settings"},
+        {"$set": {"last_send_date": date}}
+    )
+    
+    return {"message": f"CSV-Report für {date} erfolgreich versendet", "date": date}
+
+
 @api_router.get("/")
 async def root():
     return {"message": "Zeiterfassungs-App API"}
