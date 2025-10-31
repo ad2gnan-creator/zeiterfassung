@@ -235,8 +235,42 @@ async def update_settings(settings_update: SettingsUpdate):
 
 # ========== CSV Export & Email Functions ==========
 
+async def generate_csv_data_since_last_download(last_download: Optional[str] = None) -> tuple:
+    """Generate CSV data for all time entries since last download"""
+    query = {}
+    
+    # If there was a last download, only get entries after that time
+    if last_download:
+        query['timestamp'] = {'$gt': last_download}
+    
+    entries = await db.time_entries.find(query, {"_id": 0}).sort("timestamp", 1).to_list(100000)
+    
+    if not entries:
+        return None, []
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=';')
+    
+    # Write header
+    writer.writerow(['Personalnummer', 'Button-Art', 'Datum', 'Uhrzeit'])
+    
+    # Write data
+    entry_ids = []
+    for entry in entries:
+        writer.writerow([
+            entry['personalnummer'],
+            entry['button_type'],
+            entry['datum'],
+            entry['uhrzeit']
+        ])
+        entry_ids.append(entry['id'])
+    
+    return output.getvalue(), entry_ids
+
+
 async def generate_csv_data(date: Optional[str] = None) -> str:
-    """Generate CSV data for time entries"""
+    """Generate CSV data for time entries (for email sending)"""
     if not date:
         date = datetime.now().strftime("%Y-%m-%d")
     
