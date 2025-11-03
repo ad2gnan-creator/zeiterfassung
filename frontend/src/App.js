@@ -369,6 +369,23 @@ function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, 
                 placeholder="z.B. Mustermann"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Abteilung *
+              </label>
+              <select
+                data-testid="input-abteilung"
+                required
+                value={newEmployee.abteilung}
+                onChange={(e) => setNewEmployee({ ...newEmployee, abteilung: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+              >
+                <option value="Holz">Holz</option>
+                <option value="Kunststoff">Kunststoff</option>
+                <option value="Montage">Montage</option>
+                <option value="Verwaltung">Verwaltung</option>
+              </select>
+            </div>
             <button
               data-testid="btn-add-employee"
               type="submit"
