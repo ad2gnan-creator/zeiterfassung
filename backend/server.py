@@ -627,12 +627,6 @@ async def clear_database():
         "message": f"{result.deleted_count} Zeiterfassungen gelöscht",
         "deleted_count": result.deleted_count
     }
-        io.StringIO(csv_data),
-        media_type="text/csv",
-        headers={
-            "Content-Disposition": f"attachment; filename=zeiterfassung_{date}.csv"
-        }
-    )
 
 
 @api_router.get("/scheduler-status")
