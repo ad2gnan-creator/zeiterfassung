@@ -102,6 +102,32 @@ function App() {
     }
   };
 
+  const handleEditEmployee = (employee) => {
+    setEditEmployee({ ...employee });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateEmployee = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await axios.put(`${API}/employees/${editEmployee.id}`, {
+        personalnummer: editEmployee.personalnummer,
+        vorname: editEmployee.vorname,
+        nachname: editEmployee.nachname,
+        abteilung: editEmployee.abteilung
+      });
+      showMessage('Mitarbeiter erfolgreich aktualisiert!');
+      setShowEditModal(false);
+      setEditEmployee(null);
+      loadEmployees();
+    } catch (error) {
+      showMessage(error.response?.data?.detail || 'Fehler beim Aktualisieren', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setLoading(true);
