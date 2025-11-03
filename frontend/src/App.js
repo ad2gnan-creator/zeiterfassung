@@ -136,12 +136,70 @@ function App() {
     }
   };
 
+  const handleNavigate = (targetView) => {
+    if (targetView === 'terminal') {
+      setView('terminal');
+      setSelectedEmployee(null);
+    } else if (targetView === 'admin' || targetView === 'settings') {
+      if (isAuthenticated) {
+        setView(targetView);
+      } else {
+        setPendingView(targetView);
+        setShowLoginModal(true);
+      }
+    }
+  };
+
+  const handleLogin = async () => {
+    setLoginError('');
+    try {
+      const response = await axios.post(`${API}/verify-password`, {
+        password: loginPassword
+      });
+      
+      if (response.data.success) {
+        setIsAuthenticated(true);
+        setShowLoginModal(false);
+        setLoginPassword('');
+        if (pendingView) {
+          setView(pendingView);
+          setPendingView(null);
+        }
+        showMessage('Login erfolgreich!');
+      } else {
+        setLoginError('Falsches Passwort');
+      }
+    } catch (error) {
+      setLoginError('Fehler beim Login');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setView('terminal');
+    showMessage('Abgemeldet');
+  };
+
+  const handleResetPassword = async () => {
+    if (window.confirm('Passwort wirklich auf "admin" zurücksetzen?')) {
+      try {
+        await axios.post(`${API}/reset-password`);
+        showMessage('Passwort wurde auf "admin" zurückgesetzt');
+        setIsAuthenticated(false);
+        setView('terminal');
+      } catch (error) {
+        showMessage('Fehler beim Zurücksetzen', 'error');
+      }
+    }
+  };
+
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       await axios.put(`${API}/settings`, settings);
       showMessage('Einstellungen gespeichert!');
+      loadSettings();
     } catch (error) {
       showMessage('Fehler beim Speichern', 'error');
     } finally {
