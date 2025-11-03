@@ -83,6 +83,9 @@ class Settings(BaseModel):
     email_sender: Optional[str] = None
     email_password: Optional[str] = None
     email_recipient: Optional[str] = None
+    smtp_server: str = "mail.gmx.net"  # SMTP Server
+    smtp_port: int = 587  # SMTP Port
+    use_tls: bool = True  # TLS verwenden
     send_time: str = "18:00"  # Default send time
     last_send_date: Optional[str] = None
     last_download_datetime: Optional[str] = None
@@ -92,6 +95,9 @@ class SettingsUpdate(BaseModel):
     email_sender: Optional[str] = None
     email_password: Optional[str] = None
     email_recipient: Optional[str] = None
+    smtp_server: Optional[str] = None
+    smtp_port: Optional[int] = None
+    use_tls: Optional[bool] = None
     send_time: Optional[str] = None
     admin_reset_email: Optional[str] = None
 
