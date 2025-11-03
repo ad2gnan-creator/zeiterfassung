@@ -723,14 +723,14 @@ async def send_daily_email_job():
             logger.info(f"Email für {today} bereits versendet - überspringe")
             return
         
-        # Generate CSV
-        csv_data = await generate_csv_data(today)
+        # Generate CSV with ALL data
+        csv_data = await generate_csv_data_all()
         if not csv_data:
-            logger.info(f"Keine Zeiterfassungsdaten für {today} - überspringe Email-Versand")
+            logger.info("Keine Zeiterfassungsdaten in Datenbank - überspringe Email-Versand")
             return
         
         # Send email
-        await send_email_with_csv(settings_obj, csv_data, today)
+        await send_email_with_csv(settings_obj, csv_data)
         
         # Update last send date
         await db.settings.update_one(
