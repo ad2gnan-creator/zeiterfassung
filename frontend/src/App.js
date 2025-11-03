@@ -16,7 +16,8 @@ function App() {
   const [newEmployee, setNewEmployee] = useState({
     personalnummer: '',
     vorname: '',
-    nachname: ''
+    nachname: '',
+    abteilung: 'Holz'
   });
 
   // Settings state
