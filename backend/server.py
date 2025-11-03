@@ -266,6 +266,10 @@ async def update_settings(settings_update: SettingsUpdate):
             {"$set": update_data},
             upsert=True
         )
+        
+        # Update scheduler if send_time was changed
+        if "send_time" in update_data:
+            await update_scheduler_time()
     
     settings = await db.settings.find_one({"id": "settings"}, {"_id": 0})
     return Settings(**settings)
