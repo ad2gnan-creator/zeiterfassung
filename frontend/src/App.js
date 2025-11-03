@@ -43,6 +43,9 @@ function App() {
     email_sender: '',
     email_password: '',
     email_recipient: '',
+    smtp_server: 'mail.gmx.net',
+    smtp_port: 587,
+    use_tls: true,
     send_time: '18:00',
     admin_reset_email: ''
   });
