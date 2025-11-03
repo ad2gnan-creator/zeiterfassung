@@ -6,41 +6,39 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 function App() {
-  const [view, setView] = useState('terminal'); // 'terminal', 'admin', 'settings', 'reset-password'
+  const [view, setView] = useState('terminal');
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Login state
+  // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null); // {username, role}
-  const [showLoginModal, setShowLoginModal] = useState(true); // Start with login
-  const [loginUsername, setLoginUsername] = useState('');
+  const [showLoginModal, setShowLoginModal] = useState(true);
+  const [loginUsername, setLoginUsername] = useState('user');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
   // Password change state
-  const [showPasswordChange, setShowPasswordChange] = useState(false);
-  const [passwordChangeData, setPasswordChangeData] = useState({
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
     oldPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
 
-  // Admin form state
+  // Employee management
   const [newEmployee, setNewEmployee] = useState({
     personalnummer: '',
     vorname: '',
     nachname: '',
     abteilung: 'Holz'
   });
-
-  // Edit employee state
   const [editEmployee, setEditEmployee] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // Settings state
+  // Settings
   const [settings, setSettings] = useState({
     email_sender: '',
     email_password: '',
@@ -54,7 +52,7 @@ function App() {
       loadEmployees();
       loadSettings();
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const loadEmployees = async () => {
     try {
@@ -74,93 +72,12 @@ function App() {
     }
   };
 
-  const handleTimeEntry = async (buttonType) => {
-    if (!selectedEmployee) return;
-
-    setLoading(true);
-    try {
-      await axios.post(`${API}/time-entries`, {
-        personalnummer: selectedEmployee.personalnummer,
-        button_type: buttonType
-      });
-      
-      showMessage(`${buttonType} erfasst für ${selectedEmployee.vorname} ${selectedEmployee.nachname}`);
-      setSelectedEmployee(null);
-    } catch (error) {
-      showMessage('Fehler beim Erfassen der Zeit', 'error');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+  const showMessage = (msg, type = 'success') => {
+    setMessage({ text: msg, type });
+    setTimeout(() => setMessage(''), 3000);
   };
 
-  const handleAddEmployee = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await axios.post(`${API}/employees`, newEmployee);
-      showMessage('Mitarbeiter erfolgreich angelegt!');
-      setNewEmployee({ personalnummer: '', vorname: '', nachname: '', abteilung: 'Holz' });
-      loadEmployees();
-    } catch (error) {
-      showMessage(error.response?.data?.detail || 'Fehler beim Anlegen', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteEmployee = async (id) => {
-    if (!window.confirm('Mitarbeiter wirklich löschen?')) return;
-    
-    try {
-      await axios.delete(`${API}/employees/${id}`);
-      showMessage('Mitarbeiter gelöscht');
-      loadEmployees();
-    } catch (error) {
-      showMessage('Fehler beim Löschen', 'error');
-    }
-  };
-
-  const handleEditEmployee = (employee) => {
-    setEditEmployee({ ...employee });
-    setShowEditModal(true);
-  };
-
-  const handleUpdateEmployee = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await axios.put(`${API}/employees/${editEmployee.id}`, {
-        personalnummer: editEmployee.personalnummer,
-        vorname: editEmployee.vorname,
-        nachname: editEmployee.nachname,
-        abteilung: editEmployee.abteilung
-      });
-      showMessage('Mitarbeiter erfolgreich aktualisiert!');
-      setShowEditModal(false);
-      setEditEmployee(null);
-      loadEmployees();
-    } catch (error) {
-      showMessage(error.response?.data?.detail || 'Fehler beim Aktualisieren', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleNavigate = (targetView) => {
-    if (targetView === 'terminal') {
-      setView('terminal');
-      setSelectedEmployee(null);
-    } else if (targetView === 'admin' || targetView === 'settings') {
-      // Only admin can access these
-      if (currentUser && currentUser.role === 'admin') {
-        setView(targetView);
-      } else {
-        showMessage('Nur Administrator hat Zugriff', 'error');
-      }
-    }
-  };
-
+  // Auth functions
   const handleLogin = async () => {
     setLoginError('');
     try {
@@ -173,9 +90,7 @@ function App() {
         setIsAuthenticated(true);
         setCurrentUser({ username: response.data.username, role: response.data.role });
         setShowLoginModal(false);
-        setLoginUsername('');
         setLoginPassword('');
-        setView('terminal');
         showMessage(`Willkommen, ${response.data.username}!`);
       } else {
         setLoginError(response.data.message || 'Login fehlgeschlagen');
@@ -194,47 +109,122 @@ function App() {
   };
 
   const handlePasswordChange = async () => {
-    if (passwordChangeData.newPassword !== passwordChangeData.confirmPassword) {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
       showMessage('Passwörter stimmen nicht überein', 'error');
+      return;
+    }
+    if (passwordData.newPassword.length < 3) {
+      showMessage('Passwort muss mindestens 3 Zeichen haben', 'error');
       return;
     }
 
     try {
       await axios.post(`${API}/change-password`, {
         username: currentUser.username,
-        old_password: passwordChangeData.oldPassword,
-        new_password: passwordChangeData.newPassword
+        old_password: passwordData.oldPassword,
+        new_password: passwordData.newPassword
       });
       showMessage('Passwort erfolgreich geändert!');
-      setShowPasswordChange(false);
-      setPasswordChangeData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      setShowPasswordModal(false);
+      setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
       showMessage(error.response?.data?.detail || 'Fehler beim Ändern', 'error');
     }
   };
 
-  const handleRequestPasswordReset = async () => {
+  const handleRequestAdminReset = async () => {
     try {
       const response = await axios.post(`${API}/request-password-reset`, {
         username: 'administrator'
       });
       showMessage(response.data.message);
     } catch (error) {
-      showMessage(error.response?.data?.detail || 'Fehler beim Anfordern', 'error');
+      showMessage(error.response?.data?.detail || 'Fehler', 'error');
     }
   };
 
   const handleResetUserPassword = async () => {
-    if (window.confirm('User-Passwort wirklich auf "user" zurücksetzen?')) {
-      try {
-        await axios.post(`${API}/reset-user-password`);
-        showMessage('User-Passwort wurde auf "user" zurückgesetzt');
-      } catch (error) {
-        showMessage('Fehler beim Zurücksetzen', 'error');
-      }
+    if (!window.confirm('User-Passwort auf "user" zurücksetzen?')) return;
+    try {
+      await axios.post(`${API}/reset-user-password`);
+      showMessage('User-Passwort zurückgesetzt');
+    } catch (error) {
+      showMessage('Fehler beim Zurücksetzen', 'error');
     }
   };
 
+  // Time entry
+  const handleTimeEntry = async (buttonType) => {
+    if (!selectedEmployee) return;
+    setLoading(true);
+    try {
+      await axios.post(`${API}/time-entries`, {
+        personalnummer: selectedEmployee.personalnummer,
+        button_type: buttonType
+      });
+      showMessage(`${buttonType} erfasst für ${selectedEmployee.vorname} ${selectedEmployee.nachname}`);
+      setSelectedEmployee(null);
+    } catch (error) {
+      showMessage('Fehler beim Erfassen', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Employee management
+  const handleAddEmployee = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await axios.post(`${API}/employees`, newEmployee);
+      showMessage('Mitarbeiter angelegt!');
+      setNewEmployee({ personalnummer: '', vorname: '', nachname: '', abteilung: 'Holz' });
+      loadEmployees();
+    } catch (error) {
+      showMessage(error.response?.data?.detail || 'Fehler', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditEmployee = (emp) => {
+    setEditEmployee({ ...emp });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateEmployee = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await axios.put(`${API}/employees/${editEmployee.id}`, {
+        personalnummer: editEmployee.personalnummer,
+        vorname: editEmployee.vorname,
+        nachname: editEmployee.nachname,
+        abteilung: editEmployee.abteilung
+      });
+      showMessage('Mitarbeiter aktualisiert!');
+      setShowEditModal(false);
+      setEditEmployee(null);
+      loadEmployees();
+    } catch (error) {
+      showMessage(error.response?.data?.detail || 'Fehler', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEmployee = async (id) => {
+    if (!window.confirm('Mitarbeiter wirklich löschen?')) return;
+    try {
+      await axios.delete(`${API}/employees/${id}`);
+      showMessage('Mitarbeiter gelöscht');
+      loadEmployees();
+    } catch (error) {
+      showMessage('Fehler beim Löschen', 'error');
+    }
+  };
+
+  // Settings
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -243,16 +233,69 @@ function App() {
       showMessage('Einstellungen gespeichert!');
       loadSettings();
     } catch (error) {
-      showMessage('Fehler beim Speichern', 'error');
+      showMessage('Fehler', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const showMessage = (msg, type = 'success') => {
-    setMessage({ text: msg, type });
-    setTimeout(() => setMessage(''), 3000);
+  const handleDownloadCSV = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const response = await axios.get(`${API}/download-csv?date=${today}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `zeiterfassung_${today}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      showMessage('CSV heruntergeladen!');
+    } catch (error) {
+      showMessage('Keine Daten vorhanden', 'error');
+    }
   };
+
+  const handleTestEmail = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API}/send-daily-report`);
+      showMessage(response.data.message);
+    } catch (error) {
+      showMessage(error.response?.data?.detail || 'Fehler', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNavigate = (targetView) => {
+    if (targetView === 'terminal') {
+      setView('terminal');
+      setSelectedEmployee(null);
+    } else if (targetView === 'admin' || targetView === 'settings') {
+      if (currentUser && currentUser.role === 'admin') {
+        setView(targetView);
+      } else {
+        showMessage('Nur Administrator hat Zugriff', 'error');
+      }
+    }
+  };
+
+  if (!isAuthenticated) {
+    return <LoginScreen 
+      loginUsername={loginUsername}
+      setLoginUsername={setLoginUsername}
+      loginPassword={loginPassword}
+      setLoginPassword={setLoginPassword}
+      loginError={loginError}
+      handleLogin={handleLogin}
+      loading={loading}
+      handleRequestAdminReset={handleRequestAdminReset}
+    />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -263,36 +306,27 @@ function App() {
             <div className="flex space-x-8 items-center">
               <h1 className="text-2xl font-bold text-indigo-600">⏱️ Zeiterfassung</h1>
               <button
-                data-testid="nav-terminal"
                 onClick={() => handleNavigate('terminal')}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  view === 'terminal'
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                  view === 'terminal' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
                 Terminal
               </button>
-              {isAuthenticated && (
+              {currentUser && currentUser.role === 'admin' && (
                 <>
                   <button
-                    data-testid="nav-admin"
                     onClick={() => handleNavigate('admin')}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      view === 'admin'
-                        ? 'bg-indigo-600 text-white'
-                        : 'text-gray-600 hover:bg-gray-100'
+                      view === 'admin' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'
                     }`}
                   >
                     Verwaltung
                   </button>
                   <button
-                    data-testid="nav-settings"
                     onClick={() => handleNavigate('settings')}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      view === 'settings'
-                        ? 'bg-indigo-600 text-white'
-                        : 'text-gray-600 hover:bg-gray-100'
+                      view === 'settings' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'
                     }`}
                   >
                     Einstellungen
@@ -301,23 +335,22 @@ function App() {
               )}
             </div>
             <div className="flex items-center space-x-4">
-              {isAuthenticated ? (
-                <button
-                  data-testid="btn-logout"
-                  onClick={handleLogout}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
-                >
-                  Abmelden
-                </button>
-              ) : (
-                <button
-                  data-testid="btn-login"
-                  onClick={() => setShowLoginModal(true)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
-                >
-                  🔒 Admin-Login
-                </button>
-              )}
+              <span className="text-gray-700">
+                👤 {currentUser.username}
+                {currentUser.role === 'admin' && ' (Admin)'}
+              </span>
+              <button
+                onClick={() => setShowPasswordModal(true)}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+              >
+                🔑 Passwort ändern
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+              >
+                Abmelden
+              </button>
             </div>
           </div>
         </div>
@@ -347,186 +380,180 @@ function App() {
           newEmployee={newEmployee}
           setNewEmployee={setNewEmployee}
           handleAddEmployee={handleAddEmployee}
-          handleDeleteEmployee={handleDeleteEmployee}
           handleEditEmployee={handleEditEmployee}
+          handleDeleteEmployee={handleDeleteEmployee}
           loading={loading}
+          currentUser={currentUser}
+          handleResetUserPassword={handleResetUserPassword}
         />}
         
         {view === 'settings' && <SettingsView 
           settings={settings}
           setSettings={setSettings}
           handleSaveSettings={handleSaveSettings}
+          handleDownloadCSV={handleDownloadCSV}
+          handleTestEmail={handleTestEmail}
           loading={loading}
         />}
       </div>
 
-      {/* Edit Modal */}
-      {showEditModal && editEmployee && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Mitarbeiter bearbeiten</h3>
-            <form onSubmit={handleUpdateEmployee} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Personalnummer *
-                </label>
-                <input
-                  data-testid="edit-input-personalnummer"
-                  type="text"
-                  required
-                  value={editEmployee.personalnummer}
-                  onChange={(e) => setEditEmployee({ ...editEmployee, personalnummer: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vorname *
-                </label>
-                <input
-                  data-testid="edit-input-vorname"
-                  type="text"
-                  required
-                  value={editEmployee.vorname}
-                  onChange={(e) => setEditEmployee({ ...editEmployee, vorname: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nachname *
-                </label>
-                <input
-                  data-testid="edit-input-nachname"
-                  type="text"
-                  required
-                  value={editEmployee.nachname}
-                  onChange={(e) => setEditEmployee({ ...editEmployee, nachname: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Abteilung *
-                </label>
-                <select
-                  data-testid="edit-input-abteilung"
-                  required
-                  value={editEmployee.abteilung}
-                  onChange={(e) => setEditEmployee({ ...editEmployee, abteilung: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-                >
-                  <option value="Holz">Holz</option>
-                  <option value="Kunststoff">Kunststoff</option>
-                  <option value="Montage">Montage</option>
-                  <option value="Verwaltung">Verwaltung</option>
-                </select>
-              </div>
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditEmployee(null);
-                  }}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-colors"
-                >
-                  Abbrechen
-                </button>
-                <button
-                  data-testid="btn-update-employee"
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loading ? 'Wird gespeichert...' : 'Speichern'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <PasswordModal
+          passwordData={passwordData}
+          setPasswordData={setPasswordData}
+          handlePasswordChange={handlePasswordChange}
+          onClose={() => {
+            setShowPasswordModal(false);
+            setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+          }}
+        />
       )}
 
-      {/* Login Modal */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Admin-Login</h3>
-            <p className="text-gray-600 mb-6">Bitte geben Sie das Admin-Passwort ein.</p>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Passwort
-                </label>
-                <input
-                  data-testid="login-password-input"
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') handleLogin();
-                  }}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="Passwort eingeben"
-                  autoFocus
-                />
-                {loginError && (
-                  <p className="text-red-500 text-sm mt-2">{loginError}</p>
-                )}
-              </div>
-              
-              <div className="flex space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowLoginModal(false);
-                    setLoginPassword('');
-                    setLoginError('');
-                    setPendingView(null);
-                  }}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-colors"
-                >
-                  Abbrechen
-                </button>
-                <button
-                  data-testid="btn-submit-login"
-                  onClick={handleLogin}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-                >
-                  Anmelden
-                </button>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <p className="text-sm text-gray-600 mb-3">Passwort vergessen?</p>
-                <button
-                  data-testid="btn-reset-password"
-                  onClick={() => {
-                    setShowLoginModal(false);
-                    setLoginPassword('');
-                    setLoginError('');
-                    handleResetPassword();
-                  }}
-                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-                >
-                  Passwort zurücksetzen (auf "admin")
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Edit Employee Modal */}
+      {showEditModal && editEmployee && (
+        <EditEmployeeModal
+          editEmployee={editEmployee}
+          setEditEmployee={setEditEmployee}
+          handleUpdateEmployee={handleUpdateEmployee}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditEmployee(null);
+          }}
+          loading={loading}
+        />
       )}
     </div>
   );
 }
 
+// Login Screen Component
+function LoginScreen({ loginUsername, setLoginUsername, loginPassword, setLoginPassword, loginError, handleLogin, loading, handleRequestAdminReset }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
+        <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">⏱️ Zeiterfassung</h2>
+        <p className="text-gray-600 mb-8 text-center">Bitte melden Sie sich an</p>
+        
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Benutzer</label>
+            <select
+              value={loginUsername}
+              onChange={(e) => setLoginUsername(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+            >
+              <option value="user">User (Mitarbeiter)</option>
+              <option value="administrator">Administrator</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Passwort</label>
+            <input
+              type="password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder="Passwort eingeben"
+              autoFocus
+            />
+            {loginError && <p className="text-red-500 text-sm mt-2">{loginError}</p>}
+          </div>
+
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 transition-colors"
+          >
+            {loading ? 'Anmeldung...' : 'Anmelden'}
+          </button>
+
+          {loginUsername === 'administrator' && (
+            <div className="pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-600 mb-3">Administrator-Passwort vergessen?</p>
+              <button
+                onClick={handleRequestAdminReset}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+              >
+                Reset-Link per Email anfordern
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Standard-Zugangsdaten:</strong><br/>
+            User: user / user<br/>
+            Admin: administrator / admin
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Password Change Modal
+function PasswordModal({ passwordData, setPasswordData, handlePasswordChange, onClose }) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
+        <h3 className="text-2xl font-bold text-gray-800 mb-6">Passwort ändern</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Altes Passwort</label>
+            <input
+              type="password"
+              value={passwordData.oldPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Neues Passwort</label>
+            <input
+              type="password"
+              value={passwordData.newPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Passwort bestätigen</label>
+            <input
+              type="password"
+              value={passwordData.confirmPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div className="flex space-x-3 pt-4">
+            <button
+              onClick={onClose}
+              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 px-6 rounded-lg"
+            >
+              Abbrechen
+            </button>
+            <button
+              onClick={handlePasswordChange}
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg"
+            >
+              Speichern
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Ich werde die Komponenten in einer separaten Nachricht fortsetzen, da die Datei zu groß ist...
 // Terminal View Component
 function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handleTimeEntry, loading }) {
   const [activeTab, setActiveTab] = useState('Holz');
   const departments = ['Holz', 'Kunststoff', 'Montage', 'Verwaltung'];
-  
-  // Filter employees by department
   const filteredEmployees = employees.filter(emp => emp.abteilung === activeTab);
   
   if (selectedEmployee) {
@@ -543,41 +570,36 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
 
           <div className="grid grid-cols-2 gap-6 mb-6">
             <button
-              data-testid="btn-arbeitsbeginn"
               onClick={() => handleTimeEntry('Arbeitsbeginn')}
               disabled={loading}
-              className="bg-green-500 hover:bg-green-600 text-white font-bold py-12 px-6 rounded-xl shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-xl"
+              className="bg-green-500 hover:bg-green-600 text-white font-bold py-12 px-6 rounded-xl shadow-lg transform transition hover:scale-105 disabled:opacity-50 text-xl"
             >
               ▶️ Arbeitsbeginn
             </button>
             <button
-              data-testid="btn-pause"
               onClick={() => handleTimeEntry('Pause')}
               disabled={loading}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-12 px-6 rounded-xl shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-xl"
+              className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-12 px-6 rounded-xl shadow-lg transform transition hover:scale-105 disabled:opacity-50 text-xl"
             >
               ⏸️ Pause
             </button>
             <button
-              data-testid="btn-pausenende"
               onClick={() => handleTimeEntry('Pausenende')}
               disabled={loading}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-12 px-6 rounded-xl shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-xl"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-12 px-6 rounded-xl shadow-lg transform transition hover:scale-105 disabled:opacity-50 text-xl"
             >
               ⏯️ Pausenende
             </button>
             <button
-              data-testid="btn-ende"
               onClick={() => handleTimeEntry('Ende')}
               disabled={loading}
-              className="bg-red-500 hover:bg-red-600 text-white font-bold py-12 px-6 rounded-xl shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-xl"
+              className="bg-red-500 hover:bg-red-600 text-white font-bold py-12 px-6 rounded-xl shadow-lg transform transition hover:scale-105 disabled:opacity-50 text-xl"
             >
               ⏹️ Ende
             </button>
           </div>
 
           <button
-            data-testid="btn-cancel"
             onClick={() => setSelectedEmployee(null)}
             className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 px-6 rounded-lg"
           >
@@ -591,21 +613,15 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-white rounded-xl shadow-xl p-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-          Mitarbeiter auswählen
-        </h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Mitarbeiter auswählen</h2>
         
-        {/* Department Tabs */}
         <div className="flex space-x-2 mb-6 overflow-x-auto">
           {departments.map((dept) => (
             <button
               key={dept}
-              data-testid={`tab-${dept}`}
               onClick={() => setActiveTab(dept)}
               className={`px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap ${
-                activeTab === dept
-                  ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                activeTab === dept ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               {dept}
@@ -615,15 +631,13 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
         
         {filteredEmployees.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">Keine Mitarbeiter in der Abteilung "{activeTab}".</p>
-            <p className="text-gray-400 mt-2">Bitte legen Sie zuerst Mitarbeiter in der Verwaltung an.</p>
+            <p className="text-gray-500 text-lg">Keine Mitarbeiter in "{activeTab}".</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredEmployees.map((emp) => (
               <button
                 key={emp.id}
-                data-testid={`employee-${emp.personalnummer}`}
                 onClick={() => setSelectedEmployee(emp)}
                 className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold py-6 px-6 rounded-xl shadow-lg transform transition hover:scale-105 text-left"
               >
@@ -639,66 +653,54 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
 }
 
 // Admin View Component
-function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, handleDeleteEmployee, handleEditEmployee, loading }) {
+function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, handleEditEmployee, handleDeleteEmployee, loading, currentUser, handleResetUserPassword }) {
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Add Employee Form */}
         <div className="bg-white rounded-xl shadow-xl p-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Neuer Mitarbeiter</h2>
           <form onSubmit={handleAddEmployee} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Personalnummer *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Personalnummer *</label>
               <input
-                data-testid="input-personalnummer"
                 type="text"
                 required
                 value={newEmployee.personalnummer}
                 onChange={(e) => setNewEmployee({ ...newEmployee, personalnummer: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 placeholder="z.B. 12345"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Vorname *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Vorname *</label>
               <input
-                data-testid="input-vorname"
                 type="text"
                 required
                 value={newEmployee.vorname}
                 onChange={(e) => setNewEmployee({ ...newEmployee, vorname: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 placeholder="z.B. Max"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nachname *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nachname *</label>
               <input
-                data-testid="input-nachname"
                 type="text"
                 required
                 value={newEmployee.nachname}
                 onChange={(e) => setNewEmployee({ ...newEmployee, nachname: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 placeholder="z.B. Mustermann"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Abteilung *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Abteilung *</label>
               <select
-                data-testid="input-abteilung"
                 required
                 value={newEmployee.abteilung}
                 onChange={(e) => setNewEmployee({ ...newEmployee, abteilung: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
               >
                 <option value="Holz">Holz</option>
                 <option value="Kunststoff">Kunststoff</option>
@@ -707,10 +709,9 @@ function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, 
               </select>
             </div>
             <button
-              data-testid="btn-add-employee"
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 transition-colors"
             >
               {loading ? 'Wird gespeichert...' : 'Mitarbeiter anlegen'}
             </button>
@@ -719,36 +720,26 @@ function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, 
 
         {/* Employee List */}
         <div className="bg-white rounded-xl shadow-xl p-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">
-            Mitarbeiter ({employees.length})
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Mitarbeiter ({employees.length})</h2>
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {employees.length === 0 ? (
               <p className="text-gray-500 text-center py-8">Keine Mitarbeiter vorhanden</p>
             ) : (
               employees.map((emp) => (
-                <div
-                  key={emp.id}
-                  data-testid={`employee-item-${emp.personalnummer}`}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
+                <div key={emp.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100">
                   <div>
-                    <div className="font-semibold text-gray-800">
-                      {emp.vorname} {emp.nachname}
-                    </div>
+                    <div className="font-semibold text-gray-800">{emp.vorname} {emp.nachname}</div>
                     <div className="text-sm text-gray-500">Nr: {emp.personalnummer}</div>
                     <div className="text-sm text-indigo-600 font-medium">{emp.abteilung}</div>
                   </div>
                   <div className="flex space-x-2">
                     <button
-                      data-testid={`btn-edit-${emp.personalnummer}`}
                       onClick={() => handleEditEmployee(emp)}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
                       Bearbeiten
                     </button>
                     <button
-                      data-testid={`btn-delete-${emp.personalnummer}`}
                       onClick={() => handleDeleteEmployee(emp.id)}
                       className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
@@ -761,59 +752,24 @@ function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, 
           </div>
         </div>
       </div>
+
+      {/* User Password Reset */}
+      <div className="bg-white rounded-xl shadow-xl p-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">🔑 Benutzer-Verwaltung</h2>
+        <p className="text-gray-600 mb-4">Als Administrator können Sie das User-Passwort zurücksetzen.</p>
+        <button
+          onClick={handleResetUserPassword}
+          className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+        >
+          User-Passwort auf "user" zurücksetzen
+        </button>
+      </div>
     </div>
   );
 }
 
 // Settings View Component
-function SettingsView({ settings, setSettings, handleSaveSettings, loading }) {
-  const [testLoading, setTestLoading] = useState(false);
-  const [testMessage, setTestMessage] = useState('');
-
-  const handleTestEmail = async () => {
-    setTestLoading(true);
-    setTestMessage('');
-    try {
-      const response = await axios.post(`${API}/send-daily-report`);
-      setTestMessage({ text: response.data.message, type: 'success' });
-    } catch (error) {
-      setTestMessage({ 
-        text: error.response?.data?.detail || 'Fehler beim Email-Versand', 
-        type: 'error' 
-      });
-    } finally {
-      setTestLoading(false);
-    }
-  };
-
-  const handleDownloadCSV = async () => {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const response = await axios.get(`${API}/download-csv?date=${today}`, {
-        responseType: 'blob'
-      });
-      
-      // Create blob link to download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `zeiterfassung_${today}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      setTestMessage({ text: 'CSV-Datei erfolgreich heruntergeladen!', type: 'success' });
-      setTimeout(() => setTestMessage(''), 3000);
-    } catch (error) {
-      setTestMessage({ 
-        text: error.response?.data?.detail || 'Keine Daten für heute vorhanden', 
-        type: 'error' 
-      });
-      setTimeout(() => setTestMessage(''), 3000);
-    }
-  };
-
+function SettingsView({ settings, setSettings, handleSaveSettings, handleDownloadCSV, handleTestEmail, loading }) {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-xl shadow-xl p-8">
@@ -821,144 +777,176 @@ function SettingsView({ settings, setSettings, handleSaveSettings, loading }) {
         <p className="text-gray-600 mb-6">Konfigurieren Sie hier die App-Einstellungen.</p>
         
         <form onSubmit={handleSaveSettings} className="space-y-6">
-          {/* Admin Password Section */}
+          {/* Admin Reset Email */}
           <div className="pb-6 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">🔒 Admin-Passwort</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">🔑 Administrator-Passwort-Reset</h3>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Neues Admin-Passwort
+                Email-Adresse für Admin-Reset
               </label>
               <input
-                data-testid="input-admin-password"
-                type="password"
-                value={settings.admin_password || ''}
-                onChange={(e) => setSettings({ ...settings, admin_password: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="Neues Passwort eingeben (leer lassen für keine Änderung)"
+                type="email"
+                value={settings.admin_reset_email || ''}
+                onChange={(e) => setSettings({ ...settings, admin_reset_email: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="admin@firma.de"
               />
               <p className="text-sm text-gray-500 mt-1">
-                Leer lassen, wenn Sie das Passwort nicht ändern möchten.
+                An diese Adresse wird der Passwort-Reset-Link gesendet.
               </p>
             </div>
           </div>
 
-          {/* Email Settings Section */}
+          {/* Email Settings */}
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">📧 Email-Einstellungen</h3>
-            
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Gmail-Absender-Adresse
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Gmail-Absender-Adresse</label>
                 <input
-                  data-testid="input-email-sender"
                   type="email"
                   value={settings.email_sender || ''}
                   onChange={(e) => setSettings({ ...settings, email_sender: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   placeholder="ihre-email@gmail.com"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Gmail App-Passwort
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Gmail App-Passwort</label>
                 <input
-                  data-testid="input-email-password"
                   type="password"
                   value={settings.email_password || ''}
                   onChange={(e) => setSettings({ ...settings, email_password: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   placeholder="xxxx xxxx xxxx xxxx"
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  Erstellen Sie ein App-Passwort in Ihrem Google-Konto (Sicherheit → 2-Faktor-Auth → App-Passwörter)
-                </p>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Empfänger-Email-Adresse
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Empfänger-Email-Adresse</label>
                 <input
-                  data-testid="input-email-recipient"
                   type="email"
                   value={settings.email_recipient || ''}
                   onChange={(e) => setSettings({ ...settings, email_recipient: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   placeholder="empfaenger@firma.de"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tägliche Versandzeit
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tägliche Versandzeit</label>
                 <input
-                  data-testid="input-send-time"
                   type="time"
                   value={settings.send_time || '18:00'}
                   onChange={(e) => setSettings({ ...settings, send_time: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>
           </div>
 
           <button
-            data-testid="btn-save-settings"
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 transition-colors"
           >
             {loading ? 'Wird gespeichert...' : 'Alle Einstellungen speichern'}
           </button>
         </form>
 
-        {/* CSV Download Button */}
+        {/* CSV Download */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <h3 className="font-semibold text-gray-800 mb-3">📥 CSV-Datei herunterladen</h3>
           <button
-            data-testid="btn-download-csv"
             onClick={handleDownloadCSV}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
           >
             📄 Heutige CSV-Datei herunterladen
           </button>
-          <p className="text-sm text-gray-500 mt-2">
-            Lädt die Zeiterfassungen des heutigen Tages als CSV-Datei herunter (ohne Email-Versand).
-          </p>
         </div>
 
-        {/* Test Email Button */}
+        {/* Test Email */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <h3 className="font-semibold text-gray-800 mb-3">📧 Email-Versand testen</h3>
           <button
-            data-testid="btn-test-email"
             onClick={handleTestEmail}
-            disabled={testLoading}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            disabled={loading}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 transition-colors"
           >
-            {testLoading ? 'Wird gesendet...' : 'Tages-Report jetzt senden'}
+            {loading ? 'Wird gesendet...' : 'Tages-Report jetzt senden'}
           </button>
-          {testMessage && (
-            <div className={`mt-3 p-3 rounded-lg ${
-              testMessage.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-            }`}>
-              {testMessage.text}
-            </div>
-          )}
         </div>
+      </div>
+    </div>
+  );
+}
 
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="font-semibold text-blue-900 mb-2">ℹ️ Hinweis</h3>
-          <p className="text-sm text-blue-800">
-            Der automatische CSV-Versand wird täglich zur angegebenen Zeit durchgeführt. 
-            Die CSV-Datei enthält alle Zeiterfassungen des aktuellen Tages.
-          </p>
-        </div>
+// Edit Employee Modal
+function EditEmployeeModal({ editEmployee, setEditEmployee, handleUpdateEmployee, onClose, loading }) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
+        <h3 className="text-2xl font-bold text-gray-800 mb-6">Mitarbeiter bearbeiten</h3>
+        <form onSubmit={handleUpdateEmployee} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Personalnummer *</label>
+            <input
+              type="text"
+              required
+              value={editEmployee.personalnummer}
+              onChange={(e) => setEditEmployee({ ...editEmployee, personalnummer: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Vorname *</label>
+            <input
+              type="text"
+              required
+              value={editEmployee.vorname}
+              onChange={(e) => setEditEmployee({ ...editEmployee, vorname: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nachname *</label>
+            <input
+              type="text"
+              required
+              value={editEmployee.nachname}
+              onChange={(e) => setEditEmployee({ ...editEmployee, nachname: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Abteilung *</label>
+            <select
+              required
+              value={editEmployee.abteilung}
+              onChange={(e) => setEditEmployee({ ...editEmployee, abteilung: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+            >
+              <option value="Holz">Holz</option>
+              <option value="Kunststoff">Kunststoff</option>
+              <option value="Montage">Montage</option>
+              <option value="Verwaltung">Verwaltung</option>
+            </select>
+          </div>
+          <div className="flex space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 px-6 rounded-lg"
+            >
+              Abbrechen
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50"
+            >
+              {loading ? 'Wird gespeichert...' : 'Speichern'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
