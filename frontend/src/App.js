@@ -222,7 +222,7 @@ function App() {
               <h1 className="text-2xl font-bold text-indigo-600">⏱️ Zeiterfassung</h1>
               <button
                 data-testid="nav-terminal"
-                onClick={() => { setView('terminal'); setSelectedEmployee(null); }}
+                onClick={() => handleNavigate('terminal')}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   view === 'terminal'
                     ? 'bg-indigo-600 text-white'
@@ -231,23 +231,51 @@ function App() {
               >
                 Terminal
               </button>
-              <button
-                data-testid="nav-admin"
-                onClick={() => setView('admin')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  view === 'admin'
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Verwaltung
-              </button>
-              <button
-                data-testid="nav-settings"
-                onClick={() => setView('settings')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  view === 'settings'
-                    ? 'bg-indigo-600 text-white'
+              {isAuthenticated && (
+                <>
+                  <button
+                    data-testid="nav-admin"
+                    onClick={() => handleNavigate('admin')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      view === 'admin'
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    Verwaltung
+                  </button>
+                  <button
+                    data-testid="nav-settings"
+                    onClick={() => handleNavigate('settings')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      view === 'settings'
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    Einstellungen
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="flex items-center space-x-4">
+              {isAuthenticated ? (
+                <button
+                  data-testid="btn-logout"
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+                >
+                  Abmelden
+                </button>
+              ) : (
+                <button
+                  data-testid="btn-login"
+                  onClick={() => setShowLoginModal(true)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  🔒 Admin-Login
+                </button>
+              )}
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
