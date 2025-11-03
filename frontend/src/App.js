@@ -12,6 +12,13 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
+  // Login state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [pendingView, setPendingView] = useState(null);
+
   // Admin form state
   const [newEmployee, setNewEmployee] = useState({
     personalnummer: '',
@@ -29,7 +36,8 @@ function App() {
     email_sender: '',
     email_password: '',
     email_recipient: '',
-    send_time: '18:00'
+    send_time: '18:00',
+    admin_password: ''
   });
 
   useEffect(() => {
