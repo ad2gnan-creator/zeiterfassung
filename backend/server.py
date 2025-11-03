@@ -43,17 +43,20 @@ class Employee(BaseModel):
     personalnummer: str
     vorname: str
     nachname: str
+    abteilung: str  # Holz, Kunststoff, Montage, Verwaltung
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class EmployeeCreate(BaseModel):
     personalnummer: str
     vorname: str
     nachname: str
+    abteilung: str
 
 class EmployeeUpdate(BaseModel):
     personalnummer: Optional[str] = None
     vorname: Optional[str] = None
     nachname: Optional[str] = None
+    abteilung: Optional[str] = None
 
 
 # Time Entry Models
