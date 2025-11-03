@@ -537,16 +537,19 @@ async def send_email_with_csv(settings: Settings, csv_data: str):
     if not all([settings.email_sender, settings.email_password, settings.email_recipient]):
         raise HTTPException(status_code=400, detail="Email-Einstellungen unvollständig")
     
+    # Get current date for filename
+    current_date = datetime.now(BERLIN_TZ).strftime("%Y-%m-%d")
+    
     # Create message
     msg = MIMEMultipart()
     msg['From'] = settings.email_sender
     msg['To'] = settings.email_recipient
-    msg['Subject'] = f'Zeiterfassung {date}'
+    msg['Subject'] = f'Zeiterfassung - Alle Daten bis {current_date}'
     
     # Email body
     body = f"""Hallo,
 
-anbei finden Sie die Zeiterfassungsdaten vom {date}.
+anbei finden Sie alle Zeiterfassungsdaten aus der Datenbank (Stand: {current_date}).
 
 Mit freundlichen Grüßen
 Zeiterfassungs-System
@@ -555,7 +558,7 @@ Zeiterfassungs-System
     
     # Attach CSV
     csv_attachment = MIMEApplication(csv_data.encode('utf-8'), _subtype='csv')
-    csv_attachment.add_header('Content-Disposition', 'attachment', filename=f'zeiterfassung_{date}.csv')
+    csv_attachment.add_header('Content-Disposition', 'attachment', filename=f'zeiterfassung_alle_{current_date}.csv')
     msg.attach(csv_attachment)
     
     # Send email via configurable SMTP
