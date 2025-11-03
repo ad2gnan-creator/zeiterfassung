@@ -597,32 +597,36 @@ async def send_daily_report():
     current_date = datetime.now(BERLIN_TZ).strftime("%Y-%m-%d")
     
     return {"message": f"CSV-Report mit allen Daten erfolgreich versendet (Stand: {current_date})", "date": current_date}
-    
-    # Send email
-    await send_email_with_csv(settings_obj, csv_data, date)
-    
-    # Update last send date
-    await db.settings.update_one(
-        {"id": "settings"},
-        {"$set": {"last_send_date": date}}
-    )
-    
-    return {"message": f"CSV-Report für {date} erfolgreich versendet", "date": date}
 
 
 @api_router.get("/download-csv")
-async def download_csv(date: Optional[str] = None):
-    """CSV-Datei herunterladen"""
-    if not date:
-        date = datetime.now().strftime("%Y-%m-%d")
-    
-    # Generate CSV
-    csv_data = await generate_csv_data(date)
+async def download_csv():
+    """CSV-Datei mit ALLEN Daten herunterladen"""
+    # Generate CSV with ALL data
+    csv_data = await generate_csv_data_all()
     if not csv_data:
-        raise HTTPException(status_code=404, detail=f"Keine Zeiterfassungsdaten für {date} gefunden")
+        raise HTTPException(status_code=404, detail="Keine Zeiterfassungsdaten in der Datenbank")
+    
+    current_date = datetime.now(BERLIN_TZ).strftime("%Y-%m-%d")
     
     # Return CSV as downloadable file
     return StreamingResponse(
+        io.StringIO(csv_data),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=zeiterfassung_alle_{current_date}.csv"
+        }
+    )
+
+
+@api_router.delete("/clear-database")
+async def clear_database():
+    """Alle Zeiterfassungsdaten löschen (nur für Admin)"""
+    result = await db.time_entries.delete_many({})
+    return {
+        "message": f"{result.deleted_count} Zeiterfassungen gelöscht",
+        "deleted_count": result.deleted_count
+    }
         io.StringIO(csv_data),
         media_type="text/csv",
         headers={
