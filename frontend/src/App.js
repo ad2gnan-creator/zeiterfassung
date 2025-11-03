@@ -217,6 +217,7 @@ function App() {
           setNewEmployee={setNewEmployee}
           handleAddEmployee={handleAddEmployee}
           handleDeleteEmployee={handleDeleteEmployee}
+          handleEditEmployee={handleEditEmployee}
           loading={loading}
         />}
         
@@ -227,6 +228,93 @@ function App() {
           loading={loading}
         />}
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && editEmployee && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">Mitarbeiter bearbeiten</h3>
+            <form onSubmit={handleUpdateEmployee} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Personalnummer *
+                </label>
+                <input
+                  data-testid="edit-input-personalnummer"
+                  type="text"
+                  required
+                  value={editEmployee.personalnummer}
+                  onChange={(e) => setEditEmployee({ ...editEmployee, personalnummer: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Vorname *
+                </label>
+                <input
+                  data-testid="edit-input-vorname"
+                  type="text"
+                  required
+                  value={editEmployee.vorname}
+                  onChange={(e) => setEditEmployee({ ...editEmployee, vorname: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nachname *
+                </label>
+                <input
+                  data-testid="edit-input-nachname"
+                  type="text"
+                  required
+                  value={editEmployee.nachname}
+                  onChange={(e) => setEditEmployee({ ...editEmployee, nachname: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Abteilung *
+                </label>
+                <select
+                  data-testid="edit-input-abteilung"
+                  required
+                  value={editEmployee.abteilung}
+                  onChange={(e) => setEditEmployee({ ...editEmployee, abteilung: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                >
+                  <option value="Holz">Holz</option>
+                  <option value="Kunststoff">Kunststoff</option>
+                  <option value="Montage">Montage</option>
+                  <option value="Verwaltung">Verwaltung</option>
+                </select>
+              </div>
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditEmployee(null);
+                  }}
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-colors"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  data-testid="btn-update-employee"
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? 'Wird gespeichert...' : 'Speichern'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
