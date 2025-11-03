@@ -77,7 +77,7 @@ function App() {
     try {
       await axios.post(`${API}/employees`, newEmployee);
       showMessage('Mitarbeiter erfolgreich angelegt!');
-      setNewEmployee({ personalnummer: '', vorname: '', nachname: '' });
+      setNewEmployee({ personalnummer: '', vorname: '', nachname: '', abteilung: 'Holz' });
       loadEmployees();
     } catch (error) {
       showMessage(error.response?.data?.detail || 'Fehler beim Anlegen', 'error');
