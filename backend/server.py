@@ -577,11 +577,8 @@ Zeiterfassungs-System
 
 
 @api_router.post("/send-daily-report")
-async def send_daily_report(date: Optional[str] = None):
-    """Manuell CSV-Report per Email versenden"""
-    if not date:
-        date = datetime.now().strftime("%Y-%m-%d")
-    
+async def send_daily_report():
+    """Manuell CSV-Report per Email versenden (ALLE Daten)"""
     # Get settings
     settings = await db.settings.find_one({"id": "settings"}, {"_id": 0})
     if not settings:
@@ -589,10 +586,17 @@ async def send_daily_report(date: Optional[str] = None):
     
     settings_obj = Settings(**settings)
     
-    # Generate CSV
-    csv_data = await generate_csv_data(date)
+    # Generate CSV with ALL data
+    csv_data = await generate_csv_data_all()
     if not csv_data:
-        raise HTTPException(status_code=404, detail=f"Keine Zeiterfassungsdaten für {date} gefunden")
+        raise HTTPException(status_code=404, detail="Keine Zeiterfassungsdaten in der Datenbank")
+    
+    # Send email
+    await send_email_with_csv(settings_obj, csv_data)
+    
+    current_date = datetime.now(BERLIN_TZ).strftime("%Y-%m-%d")
+    
+    return {"message": f"CSV-Report mit allen Daten erfolgreich versendet (Stand: {current_date})", "date": current_date}
     
     # Send email
     await send_email_with_csv(settings_obj, csv_data, date)
