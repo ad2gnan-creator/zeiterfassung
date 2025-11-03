@@ -858,8 +858,11 @@ function SettingsView({ settings, setSettings, handleSaveSettings, loading }) {
                   data-testid="input-send-time"
                   type="time"
                   value={settings.send_time || '18:00'}
-                  onChange={(e) => setSettings({ ...settings, send_time: e.target.value })}              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
+                  onChange={(e) => setSettings({ ...settings, send_time: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+            </div>
           </div>
 
           <button
@@ -868,7 +871,7 @@ function SettingsView({ settings, setSettings, handleSaveSettings, loading }) {
             disabled={loading}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? 'Wird gespeichert...' : 'Einstellungen speichern'}
+            {loading ? 'Wird gespeichert...' : 'Alle Einstellungen speichern'}
           </button>
         </form>
 
