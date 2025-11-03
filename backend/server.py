@@ -626,6 +626,41 @@ async def download_csv(date: Optional[str] = None):
     )
 
 
+@api_router.get("/scheduler-status")
+async def get_scheduler_status():
+    """Status des automatischen Email-Versands"""
+    try:
+        settings = await db.settings.find_one({"id": "settings"}, {"_id": 0})
+        if not settings:
+            return {"active": False, "message": "Keine Einstellungen vorhanden"}
+        
+        send_time = settings.get("send_time", "18:00")
+        last_send = settings.get("last_send_date", "Noch nie")
+        
+        # Check if email is configured
+        email_configured = all([
+            settings.get("email_sender"),
+            settings.get("email_password"),
+            settings.get("email_recipient")
+        ])
+        
+        # Get current time in Berlin timezone
+        berlin_now = datetime.now(BERLIN_TZ)
+        
+        return {
+            "active": scheduler.running,
+            "email_configured": email_configured,
+            "send_time": send_time,
+            "timezone": "Europe/Berlin",
+            "current_time": berlin_now.strftime("%Y-%m-%d %H:%M:%S"),
+            "last_send_date": last_send,
+            "next_run": "Täglich um " + send_time + " Uhr",
+            "message": "Automatischer Email-Versand ist aktiv" if email_configured else "Email nicht konfiguriert"
+        }
+    except Exception as e:
+        return {"active": False, "error": str(e)}
+
+
 @api_router.get("/")
 async def root():
     return {"message": "Zeiterfassungs-App API"}
