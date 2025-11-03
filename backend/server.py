@@ -86,12 +86,14 @@ class Settings(BaseModel):
     send_time: str = "18:00"  # Default send time
     last_send_date: Optional[str] = None
     last_download_datetime: Optional[str] = None  # Letzter Download-Zeitpunkt
+    admin_password: str = "admin"  # Admin-Passwort für Verwaltung/Einstellungen
 
 class SettingsUpdate(BaseModel):
     email_sender: Optional[str] = None
     email_password: Optional[str] = None
     email_recipient: Optional[str] = None
     send_time: Optional[str] = None
+    admin_password: Optional[str] = None
 
 
 # ========== Employee Endpoints ==========
