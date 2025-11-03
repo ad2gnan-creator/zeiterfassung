@@ -944,7 +944,10 @@ function SettingsView({ settings, setSettings, handleSaveSettings, handleDownloa
           <h3 className="font-semibold text-green-900 mb-2">✅ Automatischer Email-Versand aktiv</h3>
           <p className="text-sm text-green-800">
             Der Server versendet automatisch jeden Tag um <strong>{settings.send_time || '18:00'} Uhr</strong> (Deutsche Zeit) 
-            eine Email mit den Zeiterfassungsdaten des Tages an die konfigurierte Empfänger-Adresse.
+            eine Email mit <strong>ALLEN Zeiterfassungsdaten</strong> aus der Datenbank an die konfigurierte Empfänger-Adresse.
+          </p>
+          <p className="text-sm text-green-700 mt-2">
+            💡 Die Datenbank wird dabei <strong>NICHT</strong> geleert. Zum Löschen verwenden Sie den Button im Verwaltungsbereich.
           </p>
         </div>
 
@@ -955,8 +958,11 @@ function SettingsView({ settings, setSettings, handleSaveSettings, handleDownloa
             onClick={handleDownloadCSV}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
           >
-            📄 Heutige CSV-Datei herunterladen
+            📄 CSV mit ALLEN Daten herunterladen
           </button>
+          <p className="text-sm text-gray-500 mt-2">
+            Lädt eine CSV-Datei mit allen Zeiterfassungen aus der Datenbank herunter.
+          </p>
         </div>
 
         {/* Test Email */}
