@@ -973,8 +973,11 @@ function SettingsView({ settings, setSettings, handleSaveSettings, handleDownloa
             disabled={loading}
             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 transition-colors"
           >
-            {loading ? 'Wird gesendet...' : 'Tages-Report jetzt senden'}
+            {loading ? 'Wird gesendet...' : 'Alle Daten jetzt per Email senden'}
           </button>
+          <p className="text-sm text-gray-500 mt-2">
+            Versendet eine Email mit ALLEN Zeiterfassungsdaten aus der Datenbank.
+          </p>
         </div>
       </div>
     </div>
