@@ -549,7 +549,6 @@ function PasswordModal({ passwordData, setPasswordData, handlePasswordChange, on
   );
 }
 
-// Ich werde die Komponenten in einer separaten Nachricht fortsetzen, da die Datei zu groß ist...
 // Terminal View Component
 function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handleTimeEntry, loading }) {
   const [activeTab, setActiveTab] = useState('Holz');
