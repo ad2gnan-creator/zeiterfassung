@@ -203,6 +203,12 @@ function App() {
 
 // Terminal View Component
 function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handleTimeEntry, loading }) {
+  const [activeTab, setActiveTab] = useState('Holz');
+  const departments = ['Holz', 'Kunststoff', 'Montage', 'Verwaltung'];
+  
+  // Filter employees by department
+  const filteredEmployees = employees.filter(emp => emp.abteilung === activeTab);
+  
   if (selectedEmployee) {
     return (
       <div className="max-w-4xl mx-auto">
@@ -212,6 +218,7 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
               {selectedEmployee.vorname} {selectedEmployee.nachname}
             </h2>
             <p className="text-gray-500">Personalnummer: {selectedEmployee.personalnummer}</p>
+            <p className="text-indigo-600 font-semibold mt-1">{selectedEmployee.abteilung}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-6 mb-6">
