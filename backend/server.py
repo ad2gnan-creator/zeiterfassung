@@ -523,7 +523,7 @@ async def generate_csv_data(date: Optional[str] = None) -> str:
 
 
 async def send_email_with_csv(settings: Settings, csv_data: str, date: str):
-    """Send email with CSV attachment via Gmail SMTP"""
+    """Send email with CSV attachment via GMX SMTP"""
     if not all([settings.email_sender, settings.email_password, settings.email_recipient]):
         raise HTTPException(status_code=400, detail="Email-Einstellungen unvollständig")
     
@@ -548,11 +548,11 @@ Zeiterfassungs-System
     csv_attachment.add_header('Content-Disposition', 'attachment', filename=f'zeiterfassung_{date}.csv')
     msg.attach(csv_attachment)
     
-    # Send email via Gmail SMTP
+    # Send email via GMX SMTP
     try:
         await aiosmtplib.send(
             msg,
-            hostname='smtp.gmail.com',
+            hostname='mail.gmx.net',
             port=587,
             start_tls=True,
             username=settings.email_sender,
