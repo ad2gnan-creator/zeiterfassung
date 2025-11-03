@@ -798,27 +798,33 @@ function SettingsView({ settings, setSettings, handleSaveSettings, handleDownloa
 
           {/* Email Settings */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">📧 Email-Einstellungen</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">📧 Email-Einstellungen (GMX)</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Gmail-Absender-Adresse</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">GMX Email-Adresse</label>
                 <input
                   type="email"
                   value={settings.email_sender || ''}
                   onChange={(e) => setSettings({ ...settings, email_sender: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  placeholder="ihre-email@gmail.com"
+                  placeholder="ihre-email@gmx.de"
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  Ihre vollständige GMX Email-Adresse (z.B. max@gmx.de oder max@gmx.net)
+                </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Gmail App-Passwort</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">GMX Passwort</label>
                 <input
                   type="password"
                   value={settings.email_password || ''}
                   onChange={(e) => setSettings({ ...settings, email_password: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  placeholder="xxxx xxxx xxxx xxxx"
+                  placeholder="Ihr normales GMX Passwort"
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  Ihr normales GMX Passwort (kein App-Passwort nötig!)
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Empfänger-Email-Adresse</label>
