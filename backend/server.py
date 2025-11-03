@@ -238,6 +238,26 @@ async def update_settings(settings_update: SettingsUpdate):
 
 # ========== CSV Export & Email Functions ==========
 
+def convert_button_type_to_code(button_type: str) -> str:
+    """Convert button type to abbreviation code"""
+    mapping = {
+        'Arbeitsbeginn': 'AAB',
+        'Ende': 'AAE',
+        'Pause': 'AP',
+        'Pausenende': 'AAB'
+    }
+    return mapping.get(button_type, button_type)
+
+
+def convert_date_to_german_format(date_str: str) -> str:
+    """Convert date from YYYY-MM-DD to DD.MM.YYYY"""
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+        return date_obj.strftime("%d.%m.%Y")
+    except:
+        return date_str
+
+
 async def generate_csv_data_since_last_download(last_download: Optional[str] = None) -> tuple:
     """Generate CSV data for all time entries since last download"""
     query = {}
@@ -255,17 +275,16 @@ async def generate_csv_data_since_last_download(last_download: Optional[str] = N
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';')
     
-    # Write header
-    writer.writerow(['Personalnummer', 'Button-Art', 'Datum', 'Uhrzeit'])
+    # NO HEADER - as requested
     
-    # Write data
+    # Write data in new format: Button-Art, Uhrzeit, Datum (DD.MM.YYYY), Personalnummer
     entry_ids = []
     for entry in entries:
         writer.writerow([
-            entry['personalnummer'],
-            entry['button_type'],
-            entry['datum'],
-            entry['uhrzeit']
+            convert_button_type_to_code(entry['button_type']),  # Button-Art as code
+            entry['uhrzeit'],                                     # Uhrzeit
+            convert_date_to_german_format(entry['datum']),       # Datum in DD.MM.YYYY
+            entry['personalnummer']                               # Personalnummer
         ])
         entry_ids.append(entry['id'])
     
@@ -286,18 +305,18 @@ async def generate_csv_data(date: Optional[str] = None) -> str:
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';')
     
-    # Write header
-    writer.writerow(['Personalnummer', 'Button-Art', 'Datum', 'Uhrzeit'])
+    # NO HEADER - as requested
     
-    # Write data
+    # Write data in new format: Button-Art, Uhrzeit, Datum (DD.MM.YYYY), Personalnummer
     for entry in entries:
         writer.writerow([
-            entry['personalnummer'],
-            entry['button_type'],
-            entry['datum'],
-            entry['uhrzeit']
+            convert_button_type_to_code(entry['button_type']),  # Button-Art as code
+            entry['uhrzeit'],                                     # Uhrzeit
+            convert_date_to_german_format(entry['datum']),       # Datum in DD.MM.YYYY
+            entry['personalnummer']                               # Personalnummer
         ])
     
+    return output.getvalue()
     return output.getvalue()
 
 
