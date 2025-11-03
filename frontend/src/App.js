@@ -227,10 +227,8 @@ function App() {
   const handleResetUserPassword = async () => {
     if (window.confirm('User-Passwort wirklich auf "user" zurücksetzen?')) {
       try {
-        await axios.post(`${API}/reset-password`);
-        showMessage('Passwort wurde auf "admin" zurückgesetzt');
-        setIsAuthenticated(false);
-        setView('terminal');
+        await axios.post(`${API}/reset-user-password`);
+        showMessage('User-Passwort wurde auf "user" zurückgesetzt');
       } catch (error) {
         showMessage('Fehler beim Zurücksetzen', 'error');
       }
