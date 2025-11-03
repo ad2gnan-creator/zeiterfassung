@@ -440,23 +440,6 @@ async def reset_password():
 
 # ========== CSV Export & Email Functions ==========
 
-    else:
-        return {"success": False, "message": "Falsches Passwort"}
-
-
-@api_router.post("/reset-password")
-async def reset_password():
-    """Passwort auf Standard zurücksetzen"""
-    await db.settings.update_one(
-        {"id": "settings"},
-        {"$set": {"admin_password": "admin"}},
-        upsert=True
-    )
-    return {"message": "Passwort wurde auf 'admin' zurückgesetzt"}
-
-
-# ========== CSV Export & Email Functions ==========
-
 def convert_button_type_to_code(button_type: str) -> str:
     """Convert button type to abbreviation code"""
     mapping = {
