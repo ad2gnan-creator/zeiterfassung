@@ -244,21 +244,35 @@ function App() {
 
   const handleDownloadCSV = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const response = await axios.get(`${API}/download-csv?date=${today}`, {
+      const response = await axios.get(`${API}/download-csv`, {
         responseType: 'blob'
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `zeiterfassung_${today}.csv`);
+      const today = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `zeiterfassung_alle_${today}.csv`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
-      showMessage('CSV heruntergeladen!');
+      showMessage('CSV mit allen Daten heruntergeladen!');
     } catch (error) {
       showMessage('Keine Daten vorhanden', 'error');
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    if (!window.confirm('⚠️ ACHTUNG: Alle Zeiterfassungsdaten werden unwiderruflich gelöscht!\n\nMöchten Sie fortfahren?')) return;
+    
+    // Double confirmation
+    if (!window.confirm('Sind Sie WIRKLICH sicher? Diese Aktion kann nicht rückgängig gemacht werden!')) return;
+    
+    try {
+      const response = await axios.delete(`${API}/clear-database`);
+      showMessage(response.data.message);
+    } catch (error) {
+      showMessage('Fehler beim Löschen', 'error');
     }
   };
 
