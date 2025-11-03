@@ -238,6 +238,37 @@ async def update_settings(settings_update: SettingsUpdate):
     return Settings(**settings)
 
 
+@api_router.post("/verify-password")
+async def verify_password(password: dict):
+    """Passwort überprüfen"""
+    settings = await db.settings.find_one({"id": "settings"}, {"_id": 0})
+    
+    if not settings:
+        # Create default settings with default password
+        default_settings = Settings()
+        doc = default_settings.model_dump()
+        await db.settings.insert_one(doc)
+        stored_password = "admin"
+    else:
+        stored_password = settings.get("admin_password", "admin")
+    
+    if password.get("password") == stored_password:
+        return {"success": True, "message": "Login erfolgreich"}
+    else:
+        return {"success": False, "message": "Falsches Passwort"}
+
+
+@api_router.post("/reset-password")
+async def reset_password():
+    """Passwort auf Standard zurücksetzen"""
+    await db.settings.update_one(
+        {"id": "settings"},
+        {"$set": {"admin_password": "admin"}},
+        upsert=True
+    )
+    return {"message": "Passwort wurde auf 'admin' zurückgesetzt"}
+
+
 # ========== CSV Export & Email Functions ==========
 
 def convert_button_type_to_code(button_type: str) -> str:
