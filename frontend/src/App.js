@@ -437,7 +437,7 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
 }
 
 // Admin View Component
-function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, handleDeleteEmployee, loading }) {
+function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, handleDeleteEmployee, handleEditEmployee, loading }) {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
