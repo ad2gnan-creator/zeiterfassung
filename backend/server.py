@@ -506,12 +506,10 @@ async def generate_csv_data_since_last_download(last_download: Optional[str] = N
     return output.getvalue(), entry_ids
 
 
-async def generate_csv_data(date: Optional[str] = None) -> str:
-    """Generate CSV data for time entries (for email sending)"""
-    if not date:
-        date = datetime.now().strftime("%Y-%m-%d")
-    
-    entries = await db.time_entries.find({"datum": date}, {"_id": 0}).to_list(10000)
+async def generate_csv_data_all() -> str:
+    """Generate CSV data for ALL time entries in database"""
+    # Get ALL entries, sorted by timestamp
+    entries = await db.time_entries.find({}, {"_id": 0}).sort("timestamp", 1).to_list(100000)
     
     if not entries:
         return None
@@ -522,7 +520,7 @@ async def generate_csv_data(date: Optional[str] = None) -> str:
     
     # NO HEADER - as requested
     
-    # Write data in new format: Button-Art, Uhrzeit, Datum (DD.MM.YYYY), Personalnummer
+    # Write data in format: Button-Art, Uhrzeit, Datum (DD.MM.YYYY), Personalnummer
     for entry in entries:
         writer.writerow([
             convert_button_type_to_code(entry['button_type']),  # Button-Art as code
@@ -534,7 +532,7 @@ async def generate_csv_data(date: Optional[str] = None) -> str:
     return output.getvalue()
 
 
-async def send_email_with_csv(settings: Settings, csv_data: str, date: str):
+async def send_email_with_csv(settings: Settings, csv_data: str):
     """Send email with CSV attachment via configurable SMTP"""
     if not all([settings.email_sender, settings.email_password, settings.email_recipient]):
         raise HTTPException(status_code=400, detail="Email-Einstellungen unvollständig")
