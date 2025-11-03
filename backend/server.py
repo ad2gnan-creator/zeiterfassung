@@ -85,15 +85,39 @@ class Settings(BaseModel):
     email_recipient: Optional[str] = None
     send_time: str = "18:00"  # Default send time
     last_send_date: Optional[str] = None
-    last_download_datetime: Optional[str] = None  # Letzter Download-Zeitpunkt
-    admin_password: str = "admin"  # Admin-Passwort für Verwaltung/Einstellungen
+    last_download_datetime: Optional[str] = None
+    admin_reset_email: Optional[str] = None  # Email für Admin-Passwort-Reset
 
 class SettingsUpdate(BaseModel):
     email_sender: Optional[str] = None
     email_password: Optional[str] = None
     email_recipient: Optional[str] = None
     send_time: Optional[str] = None
-    admin_password: Optional[str] = None
+    admin_reset_email: Optional[str] = None
+
+
+# User Models
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    username: str  # "user" oder "administrator"
+    password: str
+    role: str  # "user" oder "admin"
+    reset_token: Optional[str] = None
+    reset_token_expiry: Optional[str] = None
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class PasswordChange(BaseModel):
+    username: str
+    old_password: str
+    new_password: str
+
+class PasswordResetRequest(BaseModel):
+    username: str
 
 
 # ========== Employee Endpoints ==========
