@@ -152,11 +152,11 @@ function App() {
       setView('terminal');
       setSelectedEmployee(null);
     } else if (targetView === 'admin' || targetView === 'settings') {
-      if (isAuthenticated) {
+      // Only admin can access these
+      if (currentUser && currentUser.role === 'admin') {
         setView(targetView);
       } else {
-        setPendingView(targetView);
-        setShowLoginModal(true);
+        showMessage('Nur Administrator hat Zugriff', 'error');
       }
     }
   };
@@ -164,21 +164,21 @@ function App() {
   const handleLogin = async () => {
     setLoginError('');
     try {
-      const response = await axios.post(`${API}/verify-password`, {
+      const response = await axios.post(`${API}/login`, {
+        username: loginUsername,
         password: loginPassword
       });
       
       if (response.data.success) {
         setIsAuthenticated(true);
+        setCurrentUser({ username: response.data.username, role: response.data.role });
         setShowLoginModal(false);
+        setLoginUsername('');
         setLoginPassword('');
-        if (pendingView) {
-          setView(pendingView);
-          setPendingView(null);
-        }
-        showMessage('Login erfolgreich!');
+        setView('terminal');
+        showMessage(`Willkommen, ${response.data.username}!`);
       } else {
-        setLoginError('Falsches Passwort');
+        setLoginError(response.data.message || 'Login fehlgeschlagen');
       }
     } catch (error) {
       setLoginError('Fehler beim Login');
@@ -187,12 +187,45 @@ function App() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setCurrentUser(null);
+    setShowLoginModal(true);
     setView('terminal');
     showMessage('Abgemeldet');
   };
 
-  const handleResetPassword = async () => {
-    if (window.confirm('Passwort wirklich auf "admin" zurücksetzen?')) {
+  const handlePasswordChange = async () => {
+    if (passwordChangeData.newPassword !== passwordChangeData.confirmPassword) {
+      showMessage('Passwörter stimmen nicht überein', 'error');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/change-password`, {
+        username: currentUser.username,
+        old_password: passwordChangeData.oldPassword,
+        new_password: passwordChangeData.newPassword
+      });
+      showMessage('Passwort erfolgreich geändert!');
+      setShowPasswordChange(false);
+      setPasswordChangeData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      showMessage(error.response?.data?.detail || 'Fehler beim Ändern', 'error');
+    }
+  };
+
+  const handleRequestPasswordReset = async () => {
+    try {
+      const response = await axios.post(`${API}/request-password-reset`, {
+        username: 'administrator'
+      });
+      showMessage(response.data.message);
+    } catch (error) {
+      showMessage(error.response?.data?.detail || 'Fehler beim Anfordern', 'error');
+    }
+  };
+
+  const handleResetUserPassword = async () => {
+    if (window.confirm('User-Passwort wirklich auf "user" zurücksetzen?')) {
       try {
         await axios.post(`${API}/reset-password`);
         showMessage('Passwort wurde auf "admin" zurückgesetzt');
