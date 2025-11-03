@@ -382,9 +382,9 @@ Zeiterfassungs-System
         if settings.get("email_sender") and settings.get("email_password"):
             await aiosmtplib.send(
                 msg,
-                hostname='mail.gmx.net',
-                port=587,
-                start_tls=True,
+                hostname=settings.get("smtp_server", "mail.gmx.net"),
+                port=settings.get("smtp_port", 587),
+                start_tls=settings.get("use_tls", True),
                 username=settings["email_sender"],
                 password=settings["email_password"],
             )
