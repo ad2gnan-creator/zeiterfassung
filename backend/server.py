@@ -645,6 +645,116 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+# ========== Automatic Daily Email Scheduler ==========
+
+# Timezone für Deutschland
+BERLIN_TZ = pytz.timezone('Europe/Berlin')
+
+# Initialize scheduler
+scheduler = AsyncIOScheduler(timezone=BERLIN_TZ)
+
+
+async def send_daily_email_job():
+    """Job für automatischen täglichen Email-Versand"""
+    try:
+        logger.info("Automatischer Email-Versand gestartet...")
+        
+        # Get settings
+        settings = await db.settings.find_one({"id": "settings"}, {"_id": 0})
+        if not settings:
+            logger.warning("Keine Settings gefunden für automatischen Email-Versand")
+            return
+        
+        settings_obj = Settings(**settings)
+        
+        # Check if email is configured
+        if not all([settings_obj.email_sender, settings_obj.email_password, settings_obj.email_recipient]):
+            logger.warning("Email nicht vollständig konfiguriert - überspringe automatischen Versand")
+            return
+        
+        # Get today's date
+        today = datetime.now(BERLIN_TZ).strftime("%Y-%m-%d")
+        
+        # Check if already sent today
+        if settings_obj.last_send_date == today:
+            logger.info(f"Email für {today} bereits versendet - überspringe")
+            return
+        
+        # Generate CSV
+        csv_data = await generate_csv_data(today)
+        if not csv_data:
+            logger.info(f"Keine Zeiterfassungsdaten für {today} - überspringe Email-Versand")
+            return
+        
+        # Send email
+        await send_email_with_csv(settings_obj, csv_data, today)
+        
+        # Update last send date
+        await db.settings.update_one(
+            {"id": "settings"},
+            {"$set": {"last_send_date": today}}
+        )
+        
+        logger.info(f"Automatischer Email-Versand für {today} erfolgreich!")
+        
+    except Exception as e:
+        logger.error(f"Fehler beim automatischen Email-Versand: {str(e)}")
+
+
+async def update_scheduler_time():
+    """Aktualisiert den Scheduler basierend auf den Einstellungen"""
+    try:
+        # Get settings
+        settings = await db.settings.find_one({"id": "settings"}, {"_id": 0})
+        if not settings:
+            logger.warning("Keine Settings für Scheduler-Update gefunden")
+            return
+        
+        send_time = settings.get("send_time", "18:00")
+        hour, minute = send_time.split(":")
+        
+        # Remove existing job if any
+        if scheduler.get_job('daily_email'):
+            scheduler.remove_job('daily_email')
+        
+        # Add new job with updated time
+        scheduler.add_job(
+            send_daily_email_job,
+            CronTrigger(hour=int(hour), minute=int(minute), timezone=BERLIN_TZ),
+            id='daily_email',
+            replace_existing=True
+        )
+        
+        logger.info(f"Scheduler aktualisiert: Täglicher Email-Versand um {send_time} Uhr (Europe/Berlin)")
+        
+    except Exception as e:
+        logger.error(f"Fehler beim Scheduler-Update: {str(e)}")
+
+
+@app.on_event("startup")
+async def startup_event():
+    """App-Start: Initialisiere Scheduler"""
+    logger.info("Starte Anwendung...")
+    
+    # Initialize users
+    try:
+        await init_users()
+    except:
+        pass
+    
+    # Start scheduler
+    scheduler.start()
+    logger.info("Scheduler gestartet")
+    
+    # Set initial schedule
+    await update_scheduler_time()
+    
+    logger.info("Anwendung bereit!")
+
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+    scheduler.shutdown()
+    logger.info("Anwendung beendet")
