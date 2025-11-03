@@ -775,65 +775,90 @@ function SettingsView({ settings, setSettings, handleSaveSettings, loading }) {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-xl shadow-xl p-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Email-Einstellungen</h2>
-        <p className="text-gray-600 mb-6">Konfigurieren Sie hier den automatischen CSV-Versand per Email.</p>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Einstellungen</h2>
+        <p className="text-gray-600 mb-6">Konfigurieren Sie hier die App-Einstellungen.</p>
         
         <form onSubmit={handleSaveSettings} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Gmail-Absender-Adresse
-            </label>
-            <input
-              data-testid="input-email-sender"
-              type="email"
-              value={settings.email_sender || ''}
-              onChange={(e) => setSettings({ ...settings, email_sender: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              placeholder="ihre-email@gmail.com"
-            />
+          {/* Admin Password Section */}
+          <div className="pb-6 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">🔒 Admin-Passwort</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Neues Admin-Passwort
+              </label>
+              <input
+                data-testid="input-admin-password"
+                type="password"
+                value={settings.admin_password || ''}
+                onChange={(e) => setSettings({ ...settings, admin_password: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="Neues Passwort eingeben (leer lassen für keine Änderung)"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Leer lassen, wenn Sie das Passwort nicht ändern möchten.
+              </p>
+            </div>
           </div>
 
+          {/* Email Settings Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Gmail App-Passwort
-            </label>
-            <input
-              data-testid="input-email-password"
-              type="password"
-              value={settings.email_password || ''}
-              onChange={(e) => setSettings({ ...settings, email_password: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              placeholder="xxxx xxxx xxxx xxxx"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Erstellen Sie ein App-Passwort in Ihrem Google-Konto (Sicherheit → 2-Faktor-Auth → App-Passwörter)
-            </p>
-          </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">📧 Email-Einstellungen</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gmail-Absender-Adresse
+                </label>
+                <input
+                  data-testid="input-email-sender"
+                  type="email"
+                  value={settings.email_sender || ''}
+                  onChange={(e) => setSettings({ ...settings, email_sender: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="ihre-email@gmail.com"
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Empfänger-Email-Adresse
-            </label>
-            <input
-              data-testid="input-email-recipient"
-              type="email"
-              value={settings.email_recipient || ''}
-              onChange={(e) => setSettings({ ...settings, email_recipient: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              placeholder="empfaenger@firma.de"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gmail App-Passwort
+                </label>
+                <input
+                  data-testid="input-email-password"
+                  type="password"
+                  value={settings.email_password || ''}
+                  onChange={(e) => setSettings({ ...settings, email_password: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="xxxx xxxx xxxx xxxx"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Erstellen Sie ein App-Passwort in Ihrem Google-Konto (Sicherheit → 2-Faktor-Auth → App-Passwörter)
+                </p>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tägliche Versandzeit
-            </label>
-            <input
-              data-testid="input-send-time"
-              type="time"
-              value={settings.send_time || '18:00'}
-              onChange={(e) => setSettings({ ...settings, send_time: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Empfänger-Email-Adresse
+                </label>
+                <input
+                  data-testid="input-email-recipient"
+                  type="email"
+                  value={settings.email_recipient || ''}
+                  onChange={(e) => setSettings({ ...settings, email_recipient: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="empfaenger@firma.de"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tägliche Versandzeit
+                </label>
+                <input
+                  data-testid="input-send-time"
+                  type="time"
+                  value={settings.send_time || '18:00'}
+                  onChange={(e) => setSettings({ ...settings, send_time: e.target.value })}              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>
 
