@@ -262,22 +262,184 @@ async def update_settings(settings_update: SettingsUpdate):
     return Settings(**settings)
 
 
-@api_router.post("/verify-password")
-async def verify_password(password: dict):
-    """Passwort überprüfen"""
+# ========== User Management Endpoints ==========
+
+@api_router.post("/init-users")
+async def init_users():
+    """Initialisiere Standard-Benutzer (falls nicht vorhanden)"""
+    # Check if users exist
+    user_count = await db.users.count_documents({})
+    
+    if user_count == 0:
+        # Create default users
+        default_users = [
+            User(username="user", password="user", role="user"),
+            User(username="administrator", password="admin", role="admin")
+        ]
+        
+        for user in default_users:
+            doc = user.model_dump()
+            await db.users.insert_one(doc)
+        
+        return {"message": "Standard-Benutzer erstellt", "users": ["user", "administrator"]}
+    
+    return {"message": "Benutzer existieren bereits"}
+
+
+@api_router.post("/login")
+async def login(login_data: UserLogin):
+    """Benutzer-Login"""
+    # Ensure users exist
+    await init_users()
+    
+    user = await db.users.find_one({"username": login_data.username}, {"_id": 0})
+    
+    if not user:
+        return {"success": False, "message": "Benutzer nicht gefunden"}
+    
+    if user["password"] == login_data.password:
+        return {
+            "success": True, 
+            "message": "Login erfolgreich",
+            "role": user["role"],
+            "username": user["username"]
+        }
+    else:
+        return {"success": False, "message": "Falsches Passwort"}
+
+
+@api_router.post("/change-password")
+async def change_password(password_change: PasswordChange):
+    """Passwort ändern"""
+    user = await db.users.find_one({"username": password_change.username}, {"_id": 0})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    
+    if user["password"] != password_change.old_password:
+        raise HTTPException(status_code=400, detail="Altes Passwort ist falsch")
+    
+    await db.users.update_one(
+        {"username": password_change.username},
+        {"$set": {"password": password_change.new_password}}
+    )
+    
+    return {"message": "Passwort erfolgreich geändert"}
+
+
+@api_router.post("/request-password-reset")
+async def request_password_reset(reset_request: PasswordResetRequest):
+    """Passwort-Reset anfordern (nur für Administrator)"""
+    if reset_request.username != "administrator":
+        raise HTTPException(status_code=403, detail="Passwort-Reset nur für Administrator möglich")
+    
+    # Generate reset token
+    reset_token = str(uuid.uuid4())
+    expiry = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+    
+    await db.users.update_one(
+        {"username": "administrator"},
+        {"$set": {"reset_token": reset_token, "reset_token_expiry": expiry}}
+    )
+    
+    # Get admin reset email from settings
     settings = await db.settings.find_one({"id": "settings"}, {"_id": 0})
     
-    if not settings:
-        # Create default settings with default password
-        default_settings = Settings()
-        doc = default_settings.model_dump()
-        await db.settings.insert_one(doc)
-        stored_password = "admin"
-    else:
-        stored_password = settings.get("admin_password", "admin")
+    if not settings or not settings.get("admin_reset_email"):
+        raise HTTPException(status_code=400, detail="Admin-Reset-Email nicht konfiguriert")
     
-    if password.get("password") == stored_password:
-        return {"success": True, "message": "Login erfolgreich"}
+    # Send email with reset link
+    try:
+        reset_link = f"https://deutsch-connect.preview.emergentagent.com/reset-password?token={reset_token}"
+        
+        msg = MIMEMultipart()
+        msg['From'] = settings.get("email_sender", "")
+        msg['To'] = settings["admin_reset_email"]
+        msg['Subject'] = 'Passwort-Reset für Administrator'
+        
+        body = f"""Hallo Administrator,
+
+Sie haben einen Passwort-Reset angefordert.
+
+Klicken Sie auf den folgenden Link, um Ihr Passwort zurückzusetzen:
+{reset_link}
+
+Dieser Link ist 1 Stunde gültig.
+
+Falls Sie keinen Reset angefordert haben, ignorieren Sie diese Email.
+
+Mit freundlichen Grüßen
+Zeiterfassungs-System
+"""
+        msg.attach(MIMEText(body, 'plain'))
+        
+        if settings.get("email_sender") and settings.get("email_password"):
+            await aiosmtplib.send(
+                msg,
+                hostname='smtp.gmail.com',
+                port=587,
+                start_tls=True,
+                username=settings["email_sender"],
+                password=settings["email_password"],
+            )
+            return {"message": f"Reset-Link wurde an {settings['admin_reset_email']} gesendet"}
+        else:
+            # For testing without email configured
+            return {"message": f"Reset-Token: {reset_token} (Email nicht konfiguriert)", "token": reset_token}
+    
+    except Exception as e:
+        logger.error(f"Email sending failed: {str(e)}")
+        return {"message": f"Reset-Token: {reset_token} (Email-Versand fehlgeschlagen)", "token": reset_token}
+
+
+@api_router.post("/reset-password-with-token")
+async def reset_password_with_token(token: str, new_password: str):
+    """Passwort mit Reset-Token zurücksetzen"""
+    user = await db.users.find_one({"reset_token": token}, {"_id": 0})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Ungültiger Reset-Token")
+    
+    # Check if token is expired
+    if user.get("reset_token_expiry"):
+        expiry = datetime.fromisoformat(user["reset_token_expiry"])
+        if datetime.now(timezone.utc) > expiry:
+            raise HTTPException(status_code=400, detail="Reset-Token ist abgelaufen")
+    
+    # Reset password
+    await db.users.update_one(
+        {"reset_token": token},
+        {"$set": {"password": new_password}, "$unset": {"reset_token": "", "reset_token_expiry": ""}}
+    )
+    
+    return {"message": "Passwort erfolgreich zurückgesetzt"}
+
+
+@api_router.post("/reset-user-password")
+async def reset_user_password():
+    """User-Passwort auf Standard zurücksetzen (nur von Admin)"""
+    await db.users.update_one(
+        {"username": "user"},
+        {"$set": {"password": "user"}},
+        upsert=True
+    )
+    return {"message": "User-Passwort wurde auf 'user' zurückgesetzt"}
+
+
+@api_router.post("/verify-password")
+async def verify_password(password: dict):
+    """Legacy endpoint - deprecated"""
+    return {"success": False, "message": "Bitte verwenden Sie /login"}
+
+
+@api_router.post("/reset-password")
+async def reset_password():
+    """Legacy endpoint - deprecated"""
+    return {"message": "Bitte verwenden Sie /reset-user-password"}
+
+
+# ========== CSV Export & Email Functions ==========
+
     else:
         return {"success": False, "message": "Falsches Passwort"}
 
