@@ -20,6 +20,10 @@ function App() {
     abteilung: 'Holz'
   });
 
+  // Edit employee state
+  const [editEmployee, setEditEmployee] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
   // Settings state
   const [settings, setSettings] = useState({
     email_sender: '',
