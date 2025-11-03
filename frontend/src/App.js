@@ -801,32 +801,77 @@ function SettingsView({ settings, setSettings, handleSaveSettings, handleDownloa
 
           {/* Email Settings */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">📧 Email-Einstellungen (GMX)</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">📧 Email-Einstellungen (Flexibel)</h3>
             <div className="space-y-4">
+              {/* SMTP Server Settings */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-gray-200">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">SMTP Server *</label>
+                  <input
+                    type="text"
+                    value={settings.smtp_server || ''}
+                    onChange={(e) => setSettings({ ...settings, smtp_server: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="mail.gmx.net"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    GMX: mail.gmx.net | Outlook: smtp.office365.com | Web.de: smtp.web.de
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">SMTP Port *</label>
+                  <input
+                    type="number"
+                    value={settings.smtp_port || 587}
+                    onChange={(e) => setSettings({ ...settings, smtp_port: parseInt(e.target.value) })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="587"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Standard: 587 (TLS) oder 465 (SSL)
+                  </p>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">GMX Email-Adresse</label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings.use_tls || false}
+                    onChange={(e) => setSettings({ ...settings, use_tls: e.target.checked })}
+                    className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">TLS/STARTTLS verwenden (empfohlen)</span>
+                </label>
+                <p className="text-sm text-gray-500 mt-1 ml-7">
+                  Die meisten Provider benötigen TLS für Port 587
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email-Adresse (Absender) *</label>
                 <input
                   type="email"
                   value={settings.email_sender || ''}
                   onChange={(e) => setSettings({ ...settings, email_sender: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  placeholder="ihre-email@gmx.de"
+                  placeholder="ihre-email@provider.de"
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Ihre vollständige GMX Email-Adresse (z.B. max@gmx.de oder max@gmx.net)
+                  Ihre vollständige Email-Adresse
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">GMX Passwort</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Passwort *</label>
                 <input
                   type="password"
                   value={settings.email_password || ''}
                   onChange={(e) => setSettings({ ...settings, email_password: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Ihr normales GMX Passwort"
+                  placeholder="Ihr Email-Passwort"
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Ihr normales GMX Passwort (kein App-Passwort nötig!)
+                  Bei Gmail: App-Passwort | Bei GMX/Web.de/Outlook: normales Passwort
                 </p>
               </div>
               <div>
