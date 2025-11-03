@@ -276,11 +276,6 @@ function App() {
                   🔒 Admin-Login
                 </button>
               )}
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Einstellungen
-              </button>
             </div>
           </div>
         </div>
