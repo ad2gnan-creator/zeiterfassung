@@ -537,13 +537,22 @@ function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, 
                     <div className="text-sm text-gray-500">Nr: {emp.personalnummer}</div>
                     <div className="text-sm text-indigo-600 font-medium">{emp.abteilung}</div>
                   </div>
-                  <button
-                    data-testid={`btn-delete-${emp.personalnummer}`}
-                    onClick={() => handleDeleteEmployee(emp.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Löschen
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      data-testid={`btn-edit-${emp.personalnummer}`}
+                      onClick={() => handleEditEmployee(emp)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Bearbeiten
+                    </button>
+                    <button
+                      data-testid={`btn-delete-${emp.personalnummer}`}
+                      onClick={() => handleDeleteEmployee(emp.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Löschen
+                    </button>
+                  </div>
                 </div>
               ))
             )}
