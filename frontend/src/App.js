@@ -885,13 +885,16 @@ function SettingsView({ settings, setSettings, handleSaveSettings, handleDownloa
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tägliche Versandzeit</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tägliche Versandzeit (Europe/Berlin)</label>
                 <input
                   type="time"
                   value={settings.send_time || '18:00'}
                   onChange={(e) => setSettings({ ...settings, send_time: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  ⏰ Der automatische CSV-Versand erfolgt täglich zur eingestellten Zeit (Deutsche Zeit)
+                </p>
               </div>
             </div>
           </div>
@@ -904,6 +907,15 @@ function SettingsView({ settings, setSettings, handleSaveSettings, handleDownloa
             {loading ? 'Wird gespeichert...' : 'Alle Einstellungen speichern'}
           </button>
         </form>
+
+        {/* Scheduler Status Info */}
+        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <h3 className="font-semibold text-green-900 mb-2">✅ Automatischer Email-Versand aktiv</h3>
+          <p className="text-sm text-green-800">
+            Der Server versendet automatisch jeden Tag um <strong>{settings.send_time || '18:00'} Uhr</strong> (Deutsche Zeit) 
+            eine Email mit den Zeiterfassungsdaten des Tages an die konfigurierte Empfänger-Adresse.
+          </p>
+        </div>
 
         {/* CSV Download */}
         <div className="mt-6 pt-6 border-t border-gray-200">
