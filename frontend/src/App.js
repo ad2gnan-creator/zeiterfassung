@@ -781,6 +781,22 @@ function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, 
           User-Passwort auf "user" zurücksetzen
         </button>
       </div>
+
+      {/* Database Management */}
+      <div className="bg-white rounded-xl shadow-xl p-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">🗄️ Datenbank-Verwaltung</h2>
+        <p className="text-gray-600 mb-4">
+          ⚠️ <strong>Warnung:</strong> Das Löschen der Datenbank entfernt ALLE Zeiterfassungsdaten unwiderruflich!
+          <br/>Stellen Sie sicher, dass Sie vorher eine CSV-Datei heruntergeladen haben.
+        </p>
+        <button
+          data-testid="btn-clear-database"
+          onClick={handleClearDatabase}
+          className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+        >
+          🗑️ Alle Zeiterfassungsdaten löschen
+        </button>
+      </div>
     </div>
   );
 }
