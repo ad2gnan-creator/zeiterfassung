@@ -6,7 +6,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 function App() {
-  const [view, setView] = useState('terminal'); // 'terminal', 'admin', 'settings'
+  const [view, setView] = useState('terminal'); // 'terminal', 'admin', 'settings', 'reset-password'
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -14,10 +14,19 @@ function App() {
 
   // Login state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null); // {username, role}
+  const [showLoginModal, setShowLoginModal] = useState(true); // Start with login
+  const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [pendingView, setPendingView] = useState(null);
+
+  // Password change state
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [passwordChangeData, setPasswordChangeData] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   // Admin form state
   const [newEmployee, setNewEmployee] = useState({
@@ -37,12 +46,14 @@ function App() {
     email_password: '',
     email_recipient: '',
     send_time: '18:00',
-    admin_password: ''
+    admin_reset_email: ''
   });
 
   useEffect(() => {
-    loadEmployees();
-    loadSettings();
+    if (isAuthenticated) {
+      loadEmployees();
+      loadSettings();
+    }
   }, []);
 
   const loadEmployees = async () => {
