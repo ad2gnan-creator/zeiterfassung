@@ -402,6 +402,7 @@ function App() {
           loading={loading}
           currentUser={currentUser}
           handleResetUserPassword={handleResetUserPassword}
+          handleClearDatabase={handleClearDatabase}
         />}
         
         {view === 'settings' && <SettingsView 
