@@ -417,6 +417,7 @@ function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, 
                       {emp.vorname} {emp.nachname}
                     </div>
                     <div className="text-sm text-gray-500">Nr: {emp.personalnummer}</div>
+                    <div className="text-sm text-indigo-600 font-medium">{emp.abteilung}</div>
                   </div>
                   <button
                     data-testid={`btn-delete-${emp.personalnummer}`}
