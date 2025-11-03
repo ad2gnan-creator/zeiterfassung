@@ -275,14 +275,32 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
           Mitarbeiter auswählen
         </h2>
         
-        {employees.length === 0 ? (
+        {/* Department Tabs */}
+        <div className="flex space-x-2 mb-6 overflow-x-auto">
+          {departments.map((dept) => (
+            <button
+              key={dept}
+              data-testid={`tab-${dept}`}
+              onClick={() => setActiveTab(dept)}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap ${
+                activeTab === dept
+                  ? 'bg-indigo-600 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {dept}
+            </button>
+          ))}
+        </div>
+        
+        {filteredEmployees.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">Keine Mitarbeiter vorhanden.</p>
+            <p className="text-gray-500 text-lg">Keine Mitarbeiter in der Abteilung "{activeTab}".</p>
             <p className="text-gray-400 mt-2">Bitte legen Sie zuerst Mitarbeiter in der Verwaltung an.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {employees.map((emp) => (
+            {filteredEmployees.map((emp) => (
               <button
                 key={emp.id}
                 data-testid={`employee-${emp.personalnummer}`}
