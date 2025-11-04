@@ -79,7 +79,11 @@ function App() {
   const loadEmployees = async () => {
     try {
       const response = await axios.get(`${API}/employees`);
-      setEmployees(response.data);
+      // Sort employees by Personalnummer
+      const sortedEmployees = response.data.sort((a, b) => {
+        return a.personalnummer.localeCompare(b.personalnummer, undefined, { numeric: true });
+      });
+      setEmployees(sortedEmployees);
     } catch (error) {
       console.error('Fehler beim Laden der Mitarbeiter:', error);
     }
