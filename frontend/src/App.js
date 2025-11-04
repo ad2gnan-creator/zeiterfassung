@@ -50,6 +50,25 @@ function App() {
     admin_reset_email: ''
   });
 
+  // Load authentication state from localStorage on mount
+  useEffect(() => {
+    const savedAuth = localStorage.getItem('isAuthenticated');
+    const savedUser = localStorage.getItem('currentUser');
+    
+    if (savedAuth === 'true' && savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setIsAuthenticated(true);
+        setCurrentUser(user);
+        setShowLoginModal(false);
+      } catch (error) {
+        console.error('Fehler beim Laden der Sitzung:', error);
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('currentUser');
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
       loadEmployees();
