@@ -109,10 +109,16 @@ function App() {
       });
       
       if (response.data.success) {
+        const user = { username: response.data.username, role: response.data.role };
         setIsAuthenticated(true);
-        setCurrentUser({ username: response.data.username, role: response.data.role });
+        setCurrentUser(user);
         setShowLoginModal(false);
         setLoginPassword('');
+        
+        // Save to localStorage
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        
         showMessage(`Willkommen, ${response.data.username}!`);
       } else {
         setLoginError(response.data.message || 'Login fehlgeschlagen');
