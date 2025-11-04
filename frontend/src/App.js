@@ -133,6 +133,11 @@ function App() {
     setCurrentUser(null);
     setShowLoginModal(true);
     setView('terminal');
+    
+    // Clear localStorage
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('currentUser');
+    
     showMessage('Abgemeldet');
   };
 
