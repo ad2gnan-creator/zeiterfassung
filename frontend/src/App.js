@@ -217,7 +217,7 @@ function App() {
     try {
       await axios.post(`${API}/employees`, newEmployee);
       showMessage('Mitarbeiter angelegt!');
-      setNewEmployee({ personalnummer: '', vorname: '', nachname: '', abteilung: 'Holz' });
+      setNewEmployee({ personalnummer: '', vorname: '', nachname: '', abteilung: 'Holz', nfc_chip_id: '', qr_code: '' });
       loadEmployees();
     } catch (error) {
       showMessage(error.response?.data?.detail || 'Fehler', 'error');
