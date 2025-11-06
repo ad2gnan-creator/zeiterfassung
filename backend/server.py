@@ -203,6 +203,28 @@ async def update_employee(employee_id: str, employee_update: EmployeeUpdate):
         if duplicate:
             raise HTTPException(status_code=400, detail="Personalnummer existiert bereits")
     
+    # Validate QR code length if provided
+    if employee_update.qr_code and len(employee_update.qr_code.strip()) < 8:
+        raise HTTPException(status_code=400, detail="QR-Code muss mindestens 8 Zeichen lang sein")
+    
+    # Check for duplicate NFC chip ID (excluding current employee)
+    if employee_update.nfc_chip_id and employee_update.nfc_chip_id.strip():
+        duplicate_nfc = await db.employees.find_one(
+            {"nfc_chip_id": employee_update.nfc_chip_id.strip(), "id": {"$ne": employee_id}},
+            {"_id": 0}
+        )
+        if duplicate_nfc:
+            raise HTTPException(status_code=400, detail="NFC-Chip-ID wird bereits verwendet")
+    
+    # Check for duplicate QR code (excluding current employee)
+    if employee_update.qr_code and employee_update.qr_code.strip():
+        duplicate_qr = await db.employees.find_one(
+            {"qr_code": employee_update.qr_code.strip(), "id": {"$ne": employee_id}},
+            {"_id": 0}
+        )
+        if duplicate_qr:
+            raise HTTPException(status_code=400, detail="QR-Code wird bereits verwendet")
+    
     update_data = {k: v for k, v in employee_update.model_dump().items() if v is not None}
     
     if update_data:
