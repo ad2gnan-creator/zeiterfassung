@@ -849,12 +849,14 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
             </button>
           )}
 
-          <button
-            onClick={() => setShowManualSelection(true)}
-            className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-8 px-6 rounded-xl shadow-xl transform transition hover:scale-105 text-xl"
-          >
-            👥 Manuelle Auswahl
-          </button>
+          {currentUser && currentUser.role === 'admin' && (
+            <button
+              onClick={() => setShowManualSelection(true)}
+              className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-8 px-6 rounded-xl shadow-xl transform transition hover:scale-105 text-xl"
+            >
+              👥 Manuelle Auswahl
+            </button>
+          )}
         </div>
 
         <div className="text-center text-sm text-gray-500">
