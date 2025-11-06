@@ -221,9 +221,76 @@ function App() {
         button_type: buttonType
       });
       showMessage(`${buttonType} erfasst für ${selectedEmployee.vorname} ${selectedEmployee.nachname}`);
-      setSelectedEmployee(null);
+      setSelectedEmployee(null); // Auto-logout after button press
     } catch (error) {
       showMessage('Fehler beim Erfassen', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NFC Login for Android
+  const handleNFCLogin = async () => {
+    if (!('NDEFReader' in window)) {
+      showMessage('NFC wird auf diesem Gerät nicht unterstützt. Bitte verwenden Sie Chrome auf Android.', 'error');
+      return;
+    }
+
+    setIsScanning(true);
+    try {
+      const ndef = new window.NDEFReader();
+      await ndef.scan();
+      
+      showMessage('NFC-Reader aktiviert. Bitte halten Sie den Chip an das Gerät.');
+      
+      ndef.addEventListener('reading', async ({ serialNumber }) => {
+        setIsScanning(false);
+        try {
+          const response = await axios.post(`${API}/nfc-login`, {
+            nfc_chip_id: serialNumber
+          });
+          
+          if (response.data.success) {
+            setSelectedEmployee(response.data.employee);
+            showMessage(`Willkommen ${response.data.employee.vorname} ${response.data.employee.nachname}!`);
+          } else {
+            showMessage(response.data.message || 'NFC-Login fehlgeschlagen', 'error');
+          }
+        } catch (error) {
+          showMessage('Fehler beim NFC-Login', 'error');
+        }
+      });
+    } catch (error) {
+      setIsScanning(false);
+      showMessage('NFC-Scan konnte nicht gestartet werden: ' + error.message, 'error');
+    }
+  };
+
+  // QR Code Login for iOS
+  const handleQRLogin = async () => {
+    const qrCode = prompt('Bitte geben Sie Ihren QR-Code ein (mindestens 8 Zeichen):');
+    
+    if (!qrCode) return;
+    
+    if (qrCode.length < 8) {
+      showMessage('QR-Code muss mindestens 8 Zeichen lang sein', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API}/qr-login`, {
+        qr_code: qrCode
+      });
+      
+      if (response.data.success) {
+        setSelectedEmployee(response.data.employee);
+        showMessage(`Willkommen ${response.data.employee.vorname} ${response.data.employee.nachname}!`);
+      } else {
+        showMessage(response.data.message || 'QR-Login fehlgeschlagen', 'error');
+      }
+    } catch (error) {
+      showMessage('Fehler beim QR-Login', 'error');
     } finally {
       setLoading(false);
     }
