@@ -710,6 +710,74 @@ function PasswordModal({ passwordData, setPasswordData, handlePasswordChange, on
 }
 
 // Terminal View Component
+// QR Scanner Component
+function QRScannerModal({ onClose, onScan }) {
+  const scannerRef = useRef(null);
+  const [scanning, setScanning] = useState(false);
+
+  useEffect(() => {
+    let html5QrCode = null;
+
+    const startScanner = async () => {
+      try {
+        html5QrCode = new Html5Qrcode("qr-reader");
+        
+        await html5QrCode.start(
+          { facingMode: "environment" }, // Rückkamera
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+          },
+          (decodedText) => {
+            // QR-Code erfolgreich gescannt
+            html5QrCode.stop().then(() => {
+              onScan(decodedText);
+              onClose();
+            }).catch(err => console.error(err));
+          },
+          (errorMessage) => {
+            // Ignoriere Scan-Fehler (kein QR-Code erkannt)
+          }
+        );
+        setScanning(true);
+      } catch (err) {
+        console.error("Fehler beim Starten des Scanners:", err);
+        alert("Kamera konnte nicht gestartet werden. Bitte erlauben Sie den Kamera-Zugriff.");
+        onClose();
+      }
+    };
+
+    startScanner();
+
+    // Cleanup
+    return () => {
+      if (html5QrCode && scanning) {
+        html5QrCode.stop().catch(err => console.error(err));
+      }
+    };
+  }, [onClose, onScan, scanning]);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">QR-Code scannen</h2>
+        <p className="text-gray-600 mb-4 text-center">Halten Sie den QR-Code vor die Kamera</p>
+        
+        <div id="qr-reader" className="w-full rounded-lg overflow-hidden"></div>
+        
+        <button
+          onClick={() => {
+            onClose();
+          }}
+          className="w-full mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+        >
+          Abbrechen
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handleTimeEntry, loading, deviceType, handleNFCLogin, processQRLogin, isScanning, currentUser, showQRScanner, setShowQRScanner }) {
   const [activeTab, setActiveTab] = useState('Holz');
   const [showManualSelection, setShowManualSelection] = useState(false);
