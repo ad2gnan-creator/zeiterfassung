@@ -722,116 +722,59 @@ function PasswordModal({ passwordData, setPasswordData, handlePasswordChange, on
 }
 
 // Terminal View Component
-// QR Scanner Component
+// QR Scanner Component mit qr-scanner (iOS-kompatibel)
 function QRScannerModal({ onClose, onScan }) {
+  const videoRef = useRef(null);
   const scannerRef = useRef(null);
   const [error, setError] = useState(null);
-  const isMountedRef = useRef(true);
-  const isInitializedRef = useRef(false);
-  const isStartedRef = useRef(false);
-  const isStoppingRef = useRef(false);
+  const hasScannedRef = useRef(false);
 
   useEffect(() => {
-    // Verhindere doppelte Initialisierung (React StrictMode)
-    if (isInitializedRef.current) return;
-    isInitializedRef.current = true;
-
-    let html5QrCode = null;
+    let qrScanner = null;
 
     const startScanner = async () => {
       try {
-        const qrReaderId = "qr-reader";
-        
-        // Bereinige das div vor der Initialisierung
-        const readerElement = document.getElementById(qrReaderId);
-        if (readerElement) {
-          readerElement.innerHTML = '';
-        }
-        
-        html5QrCode = new Html5Qrcode(qrReaderId);
-        scannerRef.current = html5QrCode;
-        
-        const config = {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          disableFlip: false,
-          experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true
-          }
-        };
+        if (!videoRef.current) return;
 
-        // Versuche zuerst, verfügbare Kameras zu listen
-        console.log("🔍 Suche Kameras...");
-        const cameras = await Html5Qrcode.getCameras();
-        console.log("📷 Gefundene Kameras:", cameras);
+        console.log("🔍 Initialisiere QR-Scanner...");
         
-        let cameraId = { facingMode: "environment" };
-        if (cameras && cameras.length > 0) {
-          // Verwende die letzte Kamera (meist die Rückkamera)
-          cameraId = cameras[cameras.length - 1].id;
-          console.log("📷 Verwende Kamera:", cameraId);
-        }
-
-        await html5QrCode.start(
-          cameraId,
-          config,
-          (decodedText) => {
+        qrScanner = new QrScanner(
+          videoRef.current,
+          (result) => {
             // QR-Code erfolgreich gescannt
-            console.log("✅ QR-Code erkannt:", decodedText);
-            console.log("Länge:", decodedText.length);
-            console.log("isMounted:", isMountedRef.current);
-            console.log("isStopping:", isStoppingRef.current);
-            console.log("isStarted:", isStartedRef.current);
+            console.log("✅ QR-Code gescannt:", result.data);
             
-            // Verhindere mehrfache Ausführung
-            if (isStoppingRef.current) {
-              console.log("⚠️ Bereits am Stoppen, ignoriere...");
+            // Verhindere mehrfache Scans
+            if (hasScannedRef.current) {
+              console.log("⚠️ Bereits gescannt, ignoriere...");
               return;
             }
             
-            if (!isMountedRef.current) {
-              console.log("⚠️ Komponente nicht mehr gemountet");
-              return;
-            }
+            hasScannedRef.current = true;
             
-            isStoppingRef.current = true;
-            console.log("🛑 Stoppe Scanner...");
-            
-            // Stoppe Scanner
-            if (isStartedRef.current && html5QrCode) {
-              isStartedRef.current = false;
-              html5QrCode.stop()
-                .then(() => {
-                  console.log("✅ Scanner gestoppt, rufe onScan auf");
-                  onScan(decodedText);
-                  onClose();
-                })
-                .catch(err => {
-                  console.error("❌ Fehler beim Stoppen:", err);
-                  // Trotzdem fortfahren
-                  onScan(decodedText);
-                  onClose();
-                });
-            } else {
-              console.log("⚠️ Scanner war nicht gestartet, rufe onScan direkt auf");
-              onScan(decodedText);
-              onClose();
-            }
+            // Stoppe Scanner und führe Callback aus
+            qrScanner.stop();
+            console.log("📱 Rufe onScan auf mit:", result.data);
+            onScan(result.data);
+            onClose();
           },
-          (errorMessage) => {
-            // Ignoriere normale Scan-Fehler (kein QR-Code im Bild)
+          {
+            returnDetailedScanResult: true,
+            highlightScanRegion: true,
+            highlightCodeOutline: true,
+            preferredCamera: 'environment'
           }
         );
+
+        scannerRef.current = qrScanner;
         
-        // Scanner erfolgreich gestartet
-        console.log("Scanner gestartet");
-        isStartedRef.current = true;
+        // Starte Scanner
+        await qrScanner.start();
+        console.log("✅ Scanner gestartet");
+        
       } catch (err) {
-        console.error("Fehler beim Starten des Scanners:", err);
-        if (isMountedRef.current) {
-          setError("Kamera konnte nicht gestartet werden. Bitte erlauben Sie den Kamera-Zugriff.");
-        }
+        console.error("❌ Fehler beim Starten des Scanners:", err);
+        setError("Kamera konnte nicht gestartet werden. Bitte erlauben Sie den Kamera-Zugriff.");
       }
     };
 
@@ -839,43 +782,29 @@ function QRScannerModal({ onClose, onScan }) {
 
     // Cleanup
     return () => {
-      isMountedRef.current = false;
-      if (scannerRef.current && isStartedRef.current && !isStoppingRef.current) {
-        isStoppingRef.current = true;
-        isStartedRef.current = false;
-        scannerRef.current.stop()
-          .catch(err => console.error("Cleanup error:", err));
+      if (scannerRef.current) {
+        console.log("🧹 Cleanup: Stoppe Scanner");
+        scannerRef.current.stop();
+        scannerRef.current.destroy();
+        scannerRef.current = null;
       }
     };
   }, [onClose, onScan]);
 
   const handleClose = () => {
-    if (scannerRef.current && isStartedRef.current && !isStoppingRef.current) {
-      isStoppingRef.current = true;
-      isStartedRef.current = false;
-      scannerRef.current.stop()
-        .then(() => {
-          console.log("Scanner gestoppt durch Abbrechen");
-          onClose();
-        })
-        .catch(err => {
-          console.error("Error stopping scanner:", err);
-          onClose();
-        });
-    } else {
-      onClose();
+    if (scannerRef.current) {
+      scannerRef.current.stop();
+      scannerRef.current.destroy();
     }
+    onClose();
   };
 
   const handleManualInput = () => {
-    // Stoppe Scanner zuerst
-    if (scannerRef.current && isStartedRef.current && !isStoppingRef.current) {
-      isStoppingRef.current = true;
-      isStartedRef.current = false;
-      scannerRef.current.stop().catch(err => console.error(err));
+    if (scannerRef.current) {
+      scannerRef.current.stop();
+      scannerRef.current.destroy();
     }
     
-    // Manuelle Eingabe
     const qrCode = prompt('Bitte geben Sie Ihren QR-Code ein (mindestens 8 Zeichen):');
     if (qrCode) {
       onScan(qrCode);
@@ -899,7 +828,13 @@ function QRScannerModal({ onClose, onScan }) {
           </>
         )}
         
-        <div id="qr-reader" className="w-full rounded-lg overflow-hidden mb-4" style={{ minHeight: '300px' }}></div>
+        <div className="relative w-full rounded-lg overflow-hidden mb-4 bg-black" style={{ minHeight: '300px' }}>
+          <video 
+            ref={videoRef} 
+            className="w-full h-full object-cover"
+            style={{ minHeight: '300px' }}
+          ></video>
+        </div>
         
         <div className="space-y-2">
           <button
