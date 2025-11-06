@@ -1094,6 +1094,27 @@ function EditEmployeeModal({ editEmployee, setEditEmployee, handleUpdateEmployee
               <option value="Verwaltung">Verwaltung</option>
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">NFC-Chip-ID (Android)</label>
+            <input
+              type="text"
+              value={editEmployee.nfc_chip_id || ''}
+              onChange={(e) => setEditEmployee({ ...editEmployee, nfc_chip_id: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              placeholder="z.B. 04:1A:2B:3C:4D:5E"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">QR-Code (iOS, min. 8 Zeichen)</label>
+            <input
+              type="text"
+              value={editEmployee.qr_code || ''}
+              onChange={(e) => setEditEmployee({ ...editEmployee, qr_code: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              placeholder="z.B. EMP12345"
+              minLength="8"
+            />
+          </div>
           <div className="flex space-x-3 pt-4">
             <button
               type="button"
