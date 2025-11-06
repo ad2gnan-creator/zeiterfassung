@@ -842,11 +842,11 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
           
           {deviceType === 'ios' && (
             <button
-              onClick={handleQRLogin}
+              onClick={() => setShowQRScanner(true)}
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-12 px-6 rounded-xl shadow-xl transform transition hover:scale-105 disabled:opacity-50 text-2xl"
             >
-              📱 QR-Code eingeben
+              📱 QR-Code scannen
             </button>
           )}
 
