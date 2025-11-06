@@ -134,6 +134,12 @@ class PasswordChange(BaseModel):
 class PasswordResetRequest(BaseModel):
     username: str
 
+class NFCLogin(BaseModel):
+    nfc_chip_id: str
+
+class QRLogin(BaseModel):
+    qr_code: str
+
 
 # ========== Employee Endpoints ==========
 
