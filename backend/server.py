@@ -333,6 +333,63 @@ async def login(login_data: UserLogin):
         return {"success": False, "message": "Falsches Passwort"}
 
 
+@api_router.post("/nfc-login")
+async def nfc_login(nfc_data: NFCLogin):
+    """NFC-Chip Login für Mitarbeiter (Android-Tablets)"""
+    if not nfc_data.nfc_chip_id or not nfc_data.nfc_chip_id.strip():
+        return {"success": False, "message": "NFC-Chip-ID fehlt"}
+    
+    employee = await db.employees.find_one(
+        {"nfc_chip_id": nfc_data.nfc_chip_id.strip()}, 
+        {"_id": 0}
+    )
+    
+    if not employee:
+        return {"success": False, "message": "Mitarbeiter mit dieser NFC-Chip-ID nicht gefunden"}
+    
+    return {
+        "success": True,
+        "message": "Login erfolgreich",
+        "employee": {
+            "id": employee["id"],
+            "personalnummer": employee["personalnummer"],
+            "vorname": employee["vorname"],
+            "nachname": employee["nachname"],
+            "abteilung": employee["abteilung"]
+        }
+    }
+
+
+@api_router.post("/qr-login")
+async def qr_login(qr_data: QRLogin):
+    """QR-Code Login für Mitarbeiter (iOS-Tablets)"""
+    if not qr_data.qr_code or not qr_data.qr_code.strip():
+        return {"success": False, "message": "QR-Code fehlt"}
+    
+    if len(qr_data.qr_code.strip()) < 8:
+        return {"success": False, "message": "QR-Code muss mindestens 8 Zeichen lang sein"}
+    
+    employee = await db.employees.find_one(
+        {"qr_code": qr_data.qr_code.strip()}, 
+        {"_id": 0}
+    )
+    
+    if not employee:
+        return {"success": False, "message": "Mitarbeiter mit diesem QR-Code nicht gefunden"}
+    
+    return {
+        "success": True,
+        "message": "Login erfolgreich",
+        "employee": {
+            "id": employee["id"],
+            "personalnummer": employee["personalnummer"],
+            "vorname": employee["vorname"],
+            "nachname": employee["nachname"],
+            "abteilung": employee["abteilung"]
+        }
+    }
+
+
 @api_router.post("/change-password")
 async def change_password(password_change: PasswordChange):
     """Passwort ändern"""
