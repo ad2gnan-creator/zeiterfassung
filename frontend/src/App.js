@@ -751,33 +751,45 @@ function QRScannerModal({ onClose, onScan }) {
           config,
           (decodedText) => {
             // QR-Code erfolgreich gescannt
-            console.log("QR-Code gescannt:", decodedText);
+            console.log("✅ QR-Code erkannt:", decodedText);
+            console.log("Länge:", decodedText.length);
+            console.log("isMounted:", isMountedRef.current);
+            console.log("isStopping:", isStoppingRef.current);
+            console.log("isStarted:", isStartedRef.current);
             
-            if (isMountedRef.current && !isStoppingRef.current) {
-              isStoppingRef.current = true;
-              
-              // Stoppe Scanner nur wenn er gestartet wurde
-              if (isStartedRef.current && html5QrCode) {
-                isStartedRef.current = false;
-                html5QrCode.stop()
-                  .then(() => {
-                    console.log("Scanner gestoppt nach Scan");
-                    if (isMountedRef.current) {
-                      onScan(decodedText);
-                      onClose();
-                    }
-                  })
-                  .catch(err => {
-                    console.error("Fehler beim Stoppen:", err);
-                    if (isMountedRef.current) {
-                      onScan(decodedText);
-                      onClose();
-                    }
-                  });
-              } else {
-                onScan(decodedText);
-                onClose();
-              }
+            // Verhindere mehrfache Ausführung
+            if (isStoppingRef.current) {
+              console.log("⚠️ Bereits am Stoppen, ignoriere...");
+              return;
+            }
+            
+            if (!isMountedRef.current) {
+              console.log("⚠️ Komponente nicht mehr gemountet");
+              return;
+            }
+            
+            isStoppingRef.current = true;
+            console.log("🛑 Stoppe Scanner...");
+            
+            // Stoppe Scanner
+            if (isStartedRef.current && html5QrCode) {
+              isStartedRef.current = false;
+              html5QrCode.stop()
+                .then(() => {
+                  console.log("✅ Scanner gestoppt, rufe onScan auf");
+                  onScan(decodedText);
+                  onClose();
+                })
+                .catch(err => {
+                  console.error("❌ Fehler beim Stoppen:", err);
+                  // Trotzdem fortfahren
+                  onScan(decodedText);
+                  onClose();
+                });
+            } else {
+              console.log("⚠️ Scanner war nicht gestartet, rufe onScan direkt auf");
+              onScan(decodedText);
+              onClose();
             }
           },
           (errorMessage) => {
