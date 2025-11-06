@@ -714,11 +714,11 @@ function PasswordModal({ passwordData, setPasswordData, handlePasswordChange, on
 function QRScannerModal({ onClose, onScan }) {
   const scannerRef = useRef(null);
   const [error, setError] = useState(null);
-  const isStoppingRef = useRef(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
     let html5QrCode = null;
-    let isMounted = true;
 
     const startScanner = async () => {
       try {
@@ -737,34 +737,44 @@ function QRScannerModal({ onClose, onScan }) {
           config,
           (decodedText) => {
             // QR-Code erfolgreich gescannt
-            if (!isStoppingRef.current && isMounted) {
-              isStoppingRef.current = true;
+            if (isMountedRef.current && isRunning) {
+              setIsRunning(false);
               
-              // Stoppe Scanner sicher
-              html5QrCode.stop()
-                .then(() => {
-                  if (isMounted) {
-                    onScan(decodedText);
-                    onClose();
-                  }
-                })
-                .catch(err => {
-                  console.error("Fehler beim Stoppen:", err);
-                  if (isMounted) {
-                    onScan(decodedText);
-                    onClose();
-                  }
-                });
+              // Stoppe Scanner nur wenn er läuft
+              if (html5QrCode && html5QrCode.getState() === 2) { // State 2 = SCANNING
+                html5QrCode.stop()
+                  .then(() => {
+                    if (isMountedRef.current) {
+                      onScan(decodedText);
+                      onClose();
+                    }
+                  })
+                  .catch(err => {
+                    console.error("Fehler beim Stoppen:", err);
+                    if (isMountedRef.current) {
+                      onScan(decodedText);
+                      onClose();
+                    }
+                  });
+              } else {
+                onScan(decodedText);
+                onClose();
+              }
             }
           },
           (errorMessage) => {
-            // Ignoriere normale Scan-Fehler
+            // Ignoriere normale Scan-Fehler (kein QR-Code im Bild)
           }
         );
+        
+        // Scanner erfolgreich gestartet
+        if (isMountedRef.current) {
+          setIsRunning(true);
+        }
       } catch (err) {
         console.error("Fehler beim Starten des Scanners:", err);
-        if (isMounted) {
-          setError("Kamera konnte nicht gestartet werden. Bitte erlauben Sie den Kamera-Zugriff und laden Sie die Seite neu.");
+        if (isMountedRef.current) {
+          setError("Kamera konnte nicht gestartet werden. Bitte erlauben Sie den Kamera-Zugriff.");
         }
       }
     };
@@ -773,21 +783,39 @@ function QRScannerModal({ onClose, onScan }) {
 
     // Cleanup
     return () => {
-      isMounted = false;
-      if (scannerRef.current && !isStoppingRef.current) {
-        isStoppingRef.current = true;
-        scannerRef.current.stop()
-          .catch(err => console.error("Cleanup error:", err));
+      isMountedRef.current = false;
+      if (scannerRef.current) {
+        try {
+          const state = scannerRef.current.getState();
+          if (state === 2) { // Nur stoppen wenn Scanner läuft
+            scannerRef.current.stop().catch(err => console.error("Cleanup error:", err));
+          }
+        } catch (err) {
+          console.error("Cleanup state check error:", err);
+        }
       }
     };
   }, []);
 
   const handleClose = () => {
-    if (scannerRef.current && !isStoppingRef.current) {
-      isStoppingRef.current = true;
-      scannerRef.current.stop()
-        .then(() => onClose())
-        .catch(() => onClose());
+    if (scannerRef.current && isRunning) {
+      try {
+        const state = scannerRef.current.getState();
+        if (state === 2) { // Nur stoppen wenn Scanner wirklich läuft
+          setIsRunning(false);
+          scannerRef.current.stop()
+            .then(() => onClose())
+            .catch(err => {
+              console.error("Error stopping scanner:", err);
+              onClose();
+            });
+        } else {
+          onClose();
+        }
+      } catch (err) {
+        console.error("Error checking scanner state:", err);
+        onClose();
+      }
     } else {
       onClose();
     }
@@ -806,11 +834,11 @@ function QRScannerModal({ onClose, onScan }) {
           <p className="text-gray-600 mb-4 text-center">Halten Sie den QR-Code vor die Kamera</p>
         )}
         
-        <div id="qr-reader" className="w-full rounded-lg overflow-hidden"></div>
+        <div id="qr-reader" className="w-full rounded-lg overflow-hidden mb-4"></div>
         
         <button
           onClick={handleClose}
-          className="w-full mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+          className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
         >
           Abbrechen
         </button>
