@@ -151,17 +151,17 @@ async def create_employee(employee: EmployeeCreate):
     if existing:
         raise HTTPException(status_code=400, detail="Personalnummer existiert bereits")
     
-    # Validate QR code length if provided
-    if employee.qr_code and len(employee.qr_code.strip()) < 8:
+    # Validate QR code length if provided (only for non-empty strings)
+    if employee.qr_code and employee.qr_code.strip() and len(employee.qr_code.strip()) < 8:
         raise HTTPException(status_code=400, detail="QR-Code muss mindestens 8 Zeichen lang sein")
     
-    # Check for duplicate NFC chip ID
+    # Check for duplicate NFC chip ID (only for non-empty strings)
     if employee.nfc_chip_id and employee.nfc_chip_id.strip():
         duplicate_nfc = await db.employees.find_one({"nfc_chip_id": employee.nfc_chip_id.strip()}, {"_id": 0})
         if duplicate_nfc:
             raise HTTPException(status_code=400, detail="NFC-Chip-ID wird bereits verwendet")
     
-    # Check for duplicate QR code
+    # Check for duplicate QR code (only for non-empty strings)
     if employee.qr_code and employee.qr_code.strip():
         duplicate_qr = await db.employees.find_one({"qr_code": employee.qr_code.strip()}, {"_id": 0})
         if duplicate_qr:
