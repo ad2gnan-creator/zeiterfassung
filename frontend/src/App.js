@@ -526,9 +526,11 @@ function App() {
           loading={loading}
           deviceType={deviceType}
           handleNFCLogin={handleNFCLogin}
-          handleQRLogin={handleQRLogin}
+          processQRLogin={processQRLogin}
           isScanning={isScanning}
           currentUser={currentUser}
+          showQRScanner={showQRScanner}
+          setShowQRScanner={setShowQRScanner}
         />}
         
         {view === 'admin' && <AdminView 
