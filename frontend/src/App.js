@@ -83,6 +83,20 @@ function App() {
     }
   }, [isAuthenticated]);
 
+  // Detect device type on mount
+  useEffect(() => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    
+    if (/android/i.test(userAgent)) {
+      setDeviceType('android');
+    } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+      setDeviceType('ios');
+    } else {
+      // Desktop or other devices - default to android mode for testing
+      setDeviceType('android');
+    }
+  }, []);
+
   const loadEmployees = async () => {
     try {
       const response = await axios.get(`${API}/employees`);
