@@ -852,6 +852,22 @@ function QRScannerModal({ onClose, onScan }) {
     }
   };
 
+  const handleManualInput = () => {
+    // Stoppe Scanner zuerst
+    if (scannerRef.current && isStartedRef.current && !isStoppingRef.current) {
+      isStoppingRef.current = true;
+      isStartedRef.current = false;
+      scannerRef.current.stop().catch(err => console.error(err));
+    }
+    
+    // Manuelle Eingabe
+    const qrCode = prompt('Bitte geben Sie Ihren QR-Code ein (mindestens 8 Zeichen):');
+    if (qrCode) {
+      onScan(qrCode);
+    }
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
@@ -870,12 +886,21 @@ function QRScannerModal({ onClose, onScan }) {
         
         <div id="qr-reader" className="w-full rounded-lg overflow-hidden mb-4" style={{ minHeight: '300px' }}></div>
         
-        <button
-          onClick={handleClose}
-          className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-        >
-          Abbrechen
-        </button>
+        <div className="space-y-2">
+          <button
+            onClick={handleManualInput}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+          >
+            ⌨️ Code manuell eingeben
+          </button>
+          
+          <button
+            onClick={handleClose}
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+          >
+            Abbrechen
+          </button>
+        </div>
       </div>
     </div>
   );
