@@ -277,10 +277,8 @@ function App() {
     }
   };
 
-  // QR Code Login for iOS
-  const handleQRLogin = async () => {
-    const qrCode = prompt('Bitte geben Sie Ihren QR-Code ein (mindestens 8 Zeichen):');
-    
+  // QR Code Login for iOS (processes scanned code)
+  const processQRLogin = async (qrCode) => {
     if (!qrCode) return;
     
     if (qrCode.length < 8) {
