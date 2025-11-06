@@ -753,13 +753,28 @@ function QRScannerModal({ onClose, onScan }) {
         
         const config = {
           fps: 10,
-          qrbox: 250,
+          qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
-          disableFlip: false
+          disableFlip: false,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          }
         };
 
+        // Versuche zuerst, verfügbare Kameras zu listen
+        console.log("🔍 Suche Kameras...");
+        const cameras = await Html5Qrcode.getCameras();
+        console.log("📷 Gefundene Kameras:", cameras);
+        
+        let cameraId = { facingMode: "environment" };
+        if (cameras && cameras.length > 0) {
+          // Verwende die letzte Kamera (meist die Rückkamera)
+          cameraId = cameras[cameras.length - 1].id;
+          console.log("📷 Verwende Kamera:", cameraId);
+        }
+
         await html5QrCode.start(
-          { facingMode: "environment" },
+          cameraId,
           config,
           (decodedText) => {
             // QR-Code erfolgreich gescannt
