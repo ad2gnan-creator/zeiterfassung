@@ -934,11 +934,19 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
             {deviceType === 'android' 
               ? 'Halten Sie Ihren NFC-Chip an das Gerät oder wählen Sie manuell' 
               : deviceType === 'ios'
-              ? 'Geben Sie Ihren QR-Code ein oder wählen Sie manuell'
+              ? 'Scannen Sie Ihren QR-Code oder wählen Sie manuell'
               : 'Wählen Sie Ihre Login-Methode'}
           </p>
         </div>
       </div>
+
+      {/* QR Scanner Modal */}
+      {showQRScanner && (
+        <QRScannerModal
+          onClose={() => setShowQRScanner(false)}
+          onScan={(qrCode) => processQRLogin(qrCode)}
+        />
+      )}
     </div>
   );
 }
