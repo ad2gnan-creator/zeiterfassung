@@ -512,6 +512,10 @@ function App() {
           setSelectedEmployee={setSelectedEmployee}
           handleTimeEntry={handleTimeEntry}
           loading={loading}
+          deviceType={deviceType}
+          handleNFCLogin={handleNFCLogin}
+          handleQRLogin={handleQRLogin}
+          isScanning={isScanning}
         />}
         
         {view === 'admin' && <AdminView 
