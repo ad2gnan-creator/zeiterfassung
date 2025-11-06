@@ -713,37 +713,59 @@ function PasswordModal({ passwordData, setPasswordData, handlePasswordChange, on
 // QR Scanner Component
 function QRScannerModal({ onClose, onScan }) {
   const scannerRef = useRef(null);
-  const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState(null);
+  const isStoppingRef = useRef(false);
 
   useEffect(() => {
     let html5QrCode = null;
+    let isMounted = true;
 
     const startScanner = async () => {
       try {
-        html5QrCode = new Html5Qrcode("qr-reader");
+        const qrReaderId = "qr-reader";
+        html5QrCode = new Html5Qrcode(qrReaderId);
+        scannerRef.current = html5QrCode;
         
+        const config = {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0
+        };
+
         await html5QrCode.start(
-          { facingMode: "environment" }, // Rückkamera
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
-          },
+          { facingMode: "environment" },
+          config,
           (decodedText) => {
             // QR-Code erfolgreich gescannt
-            html5QrCode.stop().then(() => {
-              onScan(decodedText);
-              onClose();
-            }).catch(err => console.error(err));
+            if (!isStoppingRef.current && isMounted) {
+              isStoppingRef.current = true;
+              
+              // Stoppe Scanner sicher
+              html5QrCode.stop()
+                .then(() => {
+                  if (isMounted) {
+                    onScan(decodedText);
+                    onClose();
+                  }
+                })
+                .catch(err => {
+                  console.error("Fehler beim Stoppen:", err);
+                  if (isMounted) {
+                    onScan(decodedText);
+                    onClose();
+                  }
+                });
+            }
           },
           (errorMessage) => {
-            // Ignoriere Scan-Fehler (kein QR-Code erkannt)
+            // Ignoriere normale Scan-Fehler
           }
         );
-        setScanning(true);
       } catch (err) {
         console.error("Fehler beim Starten des Scanners:", err);
-        alert("Kamera konnte nicht gestartet werden. Bitte erlauben Sie den Kamera-Zugriff.");
-        onClose();
+        if (isMounted) {
+          setError("Kamera konnte nicht gestartet werden. Bitte erlauben Sie den Kamera-Zugriff und laden Sie die Seite neu.");
+        }
       }
     };
 
@@ -751,24 +773,43 @@ function QRScannerModal({ onClose, onScan }) {
 
     // Cleanup
     return () => {
-      if (html5QrCode && scanning) {
-        html5QrCode.stop().catch(err => console.error(err));
+      isMounted = false;
+      if (scannerRef.current && !isStoppingRef.current) {
+        isStoppingRef.current = true;
+        scannerRef.current.stop()
+          .catch(err => console.error("Cleanup error:", err));
       }
     };
-  }, [onClose, onScan, scanning]);
+  }, []);
+
+  const handleClose = () => {
+    if (scannerRef.current && !isStoppingRef.current) {
+      isStoppingRef.current = true;
+      scannerRef.current.stop()
+        .then(() => onClose())
+        .catch(() => onClose());
+    } else {
+      onClose();
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">QR-Code scannen</h2>
-        <p className="text-gray-600 mb-4 text-center">Halten Sie den QR-Code vor die Kamera</p>
+        
+        {error ? (
+          <div className="mb-4">
+            <p className="text-red-600 text-center mb-4">{error}</p>
+          </div>
+        ) : (
+          <p className="text-gray-600 mb-4 text-center">Halten Sie den QR-Code vor die Kamera</p>
+        )}
         
         <div id="qr-reader" className="w-full rounded-lg overflow-hidden"></div>
         
         <button
-          onClick={() => {
-            onClose();
-          }}
+          onClick={handleClose}
           className="w-full mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
         >
           Abbrechen
