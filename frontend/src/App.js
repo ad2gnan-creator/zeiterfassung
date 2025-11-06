@@ -33,7 +33,9 @@ function App() {
     personalnummer: '',
     vorname: '',
     nachname: '',
-    abteilung: 'Holz'
+    abteilung: 'Holz',
+    nfc_chip_id: '',
+    qr_code: ''
   });
   const [editEmployee, setEditEmployee] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
