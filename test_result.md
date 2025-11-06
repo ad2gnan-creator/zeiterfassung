@@ -107,63 +107,78 @@ user_problem_statement: "NFC & QR-Code Login für Mitarbeiter implementieren. Mi
 backend:
   - task: "Employee Model erweitert mit nfc_chip_id und qr_code Feldern"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Employee Model um nfc_chip_id (Optional[str]) und qr_code (Optional[str]) Felder erweitert"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Employee CRUD mit NFC/QR Feldern funktioniert vollständig. POST /api/employees erstellt Mitarbeiter mit nfc_chip_id und qr_code, GET /api/employees gibt neue Felder zurück, PUT /api/employees/{id} bearbeitet NFC/QR Felder erfolgreich."
 
   - task: "POST /api/nfc-login - NFC-Chip Login für Android-Tablets"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Endpoint akzeptiert nfc_chip_id, sucht Mitarbeiter in DB, gibt employee-Daten zurück wenn gefunden"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: NFC-Login funktioniert perfekt. Gültige nfc_chip_id gibt employee-Daten zurück, ungültige nfc_chip_id gibt success: false, leere nfc_chip_id wird korrekt abgelehnt."
 
   - task: "POST /api/qr-login - QR-Code Login für iOS-Tablets"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Endpoint akzeptiert qr_code (min. 8 Zeichen), sucht Mitarbeiter in DB, gibt employee-Daten zurück wenn gefunden"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: QR-Login funktioniert vollständig. Gültiger qr_code (≥8 Zeichen) gibt employee-Daten zurück, ungültiger qr_code gibt success: false, zu kurzer qr_code (<8 Zeichen) wird mit Fehlermeldung abgelehnt, leerer qr_code wird korrekt abgelehnt."
 
   - task: "Validierung: QR-Code mindestens 8 Zeichen"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Backend validiert QR-Code Länge beim Erstellen/Bearbeiten von Mitarbeitern und beim Login"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: QR-Code Längen-Validierung funktioniert korrekt. POST /api/employees mit QR-Code <8 Zeichen wird mit HTTP 400 abgelehnt, PUT /api/employees mit kurzem QR-Code wird abgelehnt, POST /api/qr-login mit kurzem Code gibt Fehlermeldung zurück."
 
   - task: "Validierung: NFC-Chip-ID und QR-Code Eindeutigkeit"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Backend prüft auf Duplikate bei NFC-Chip-ID und QR-Code beim Erstellen/Bearbeiten"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Eindeutigkeits-Validierung funktioniert perfekt. Doppelte NFC-Chip-ID wird mit HTTP 400 'bereits verwendet' abgelehnt, doppelter QR-Code wird mit HTTP 400 'bereits verwendet' abgelehnt. Validierung funktioniert sowohl bei CREATE als auch UPDATE."
 
 frontend:
   - task: "Admin: NFC-Chip-ID und QR-Code Felder in Mitarbeiterverwaltung"
