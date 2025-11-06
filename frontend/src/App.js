@@ -709,7 +709,7 @@ function PasswordModal({ passwordData, setPasswordData, handlePasswordChange, on
 }
 
 // Terminal View Component
-function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handleTimeEntry, loading, deviceType, handleNFCLogin, handleQRLogin, isScanning, currentUser }) {
+function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handleTimeEntry, loading, deviceType, handleNFCLogin, processQRLogin, isScanning, currentUser, showQRScanner, setShowQRScanner }) {
   const [activeTab, setActiveTab] = useState('Holz');
   const [showManualSelection, setShowManualSelection] = useState(false);
   const departments = ['Holz', 'Kunststoff', 'Montage', 'Verwaltung'];
