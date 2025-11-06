@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import '@/App.css';
 import axios from 'axios';
-import { Html5Qrcode } from 'html5-qrcode';
+import QrScanner from 'qr-scanner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
