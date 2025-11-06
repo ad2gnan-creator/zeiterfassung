@@ -807,6 +807,12 @@ function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, 
                     <div className="font-semibold text-gray-800">{emp.vorname} {emp.nachname}</div>
                     <div className="text-sm text-gray-500">Nr: {emp.personalnummer}</div>
                     <div className="text-sm text-indigo-600 font-medium">{emp.abteilung}</div>
+                    {emp.nfc_chip_id && (
+                      <div className="text-xs text-green-600 mt-1">🔹 NFC: {emp.nfc_chip_id}</div>
+                    )}
+                    {emp.qr_code && (
+                      <div className="text-xs text-blue-600 mt-1">📱 QR: {emp.qr_code}</div>
+                    )}
                   </div>
                   <div className="flex space-x-2">
                     <button
