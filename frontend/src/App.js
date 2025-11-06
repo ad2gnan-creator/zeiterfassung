@@ -529,6 +529,7 @@ function App() {
           handleNFCLogin={handleNFCLogin}
           handleQRLogin={handleQRLogin}
           isScanning={isScanning}
+          currentUser={currentUser}
         />}
         
         {view === 'admin' && <AdminView 
