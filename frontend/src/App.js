@@ -761,6 +761,29 @@ function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, 
                 <option value="Verwaltung">Verwaltung</option>
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">NFC-Chip-ID (Android)</label>
+              <input
+                type="text"
+                value={newEmployee.nfc_chip_id}
+                onChange={(e) => setNewEmployee({ ...newEmployee, nfc_chip_id: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="z.B. 04:1A:2B:3C:4D:5E"
+              />
+              <p className="text-xs text-gray-500 mt-1">Optional - für NFC-Login auf Android-Tablets</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">QR-Code (iOS, min. 8 Zeichen)</label>
+              <input
+                type="text"
+                value={newEmployee.qr_code}
+                onChange={(e) => setNewEmployee({ ...newEmployee, qr_code: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="z.B. EMP12345"
+                minLength="8"
+              />
+              <p className="text-xs text-gray-500 mt-1">Optional - für QR-Login auf iOS-Tablets (mindestens 8 Zeichen)</p>
+            </div>
             <button
               type="submit"
               disabled={loading}
