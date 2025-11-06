@@ -101,3 +101,172 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "NFC & QR-Code Login für Mitarbeiter implementieren. Mitarbeiter können sich per NFC-Chip (Android) oder QR-Code (iOS, min. 8 Zeichen) am Terminal anmelden. Nach Button-Klick automatisch abmelden. Admin kann NFC-Chip-ID und QR-Code in Mitarbeiterverwaltung festlegen. Admin-Login weiterhin mit Passwort."
+
+backend:
+  - task: "Employee Model erweitert mit nfc_chip_id und qr_code Feldern"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Employee Model um nfc_chip_id (Optional[str]) und qr_code (Optional[str]) Felder erweitert"
+
+  - task: "POST /api/nfc-login - NFC-Chip Login für Android-Tablets"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Endpoint akzeptiert nfc_chip_id, sucht Mitarbeiter in DB, gibt employee-Daten zurück wenn gefunden"
+
+  - task: "POST /api/qr-login - QR-Code Login für iOS-Tablets"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Endpoint akzeptiert qr_code (min. 8 Zeichen), sucht Mitarbeiter in DB, gibt employee-Daten zurück wenn gefunden"
+
+  - task: "Validierung: QR-Code mindestens 8 Zeichen"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Backend validiert QR-Code Länge beim Erstellen/Bearbeiten von Mitarbeitern und beim Login"
+
+  - task: "Validierung: NFC-Chip-ID und QR-Code Eindeutigkeit"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Backend prüft auf Duplikate bei NFC-Chip-ID und QR-Code beim Erstellen/Bearbeiten"
+
+frontend:
+  - task: "Admin: NFC-Chip-ID und QR-Code Felder in Mitarbeiterverwaltung"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Admin kann NFC-Chip-ID und QR-Code beim Anlegen/Bearbeiten von Mitarbeitern eingeben. Felder sind optional mit Hinweisen."
+
+  - task: "Terminal: Geräteerkennung (Android/iOS)"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Device-Type Detection über UserAgent. Android zeigt NFC-Button, iOS zeigt QR-Button, Desktop default Android"
+
+  - task: "Terminal: NFC-Scanner für Android"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "NFC Web API Integration (NDEFReader). Button startet NFC-Scan, liest serialNumber, sendet an /api/nfc-login"
+
+  - task: "Terminal: QR-Code-Scanner für iOS"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "QR-Code Eingabe per Prompt (min. 8 Zeichen), sendet an /api/qr-login"
+
+  - task: "Terminal: Manuelle Mitarbeiter-Auswahl"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Fallback auf klassische Mitarbeiter-Auswahl nach Abteilungen. Alle bisherigen Funktionen bleiben erhalten."
+
+  - task: "Terminal: Automatische Abmeldung nach Button-Klick"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "handleTimeEntry setzt selectedEmployee auf null nach erfolgreichem Zeit-Eintrag. Mitarbeiter wird sofort abgemeldet."
+
+  - task: "Admin: Anzeige von NFC/QR-Codes in Mitarbeiterliste"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Mitarbeiterliste zeigt NFC-Chip-ID und QR-Code wenn vorhanden mit Icons (🔹 NFC, 📱 QR)"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "POST /api/nfc-login - NFC-Chip Login"
+    - "POST /api/qr-login - QR-Code Login"
+    - "Employee CRUD mit NFC/QR Feldern"
+    - "Validierung: QR-Code mindestens 8 Zeichen"
+    - "Validierung: NFC/QR Eindeutigkeit"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "NFC & QR-Code Login Feature komplett implementiert. Backend: Employee Model erweitert, zwei neue Login-Endpoints (/api/nfc-login, /api/qr-login) mit Validierung. Frontend: Admin kann NFC/QR in Mitarbeiterverwaltung eingeben, Terminal zeigt je nach Gerät (Android/iOS) NFC- oder QR-Scanner, manuelle Auswahl als Fallback. Automatische Abmeldung nach Zeiterfassung bereits vorhanden. Bitte Backend-Tests durchführen: Employee CRUD mit neuen Feldern, NFC/QR-Login-Endpoints, Validierungen."
