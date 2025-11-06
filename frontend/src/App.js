@@ -16,6 +16,7 @@ function App() {
   const [scannerMode, setScannerMode] = useState(null); // 'nfc', 'qr', or null
   const [isScanning, setIsScanning] = useState(false);
   const [deviceType, setDeviceType] = useState(null); // 'android', 'ios', or 'unknown'
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
