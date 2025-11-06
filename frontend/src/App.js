@@ -12,6 +12,11 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
+  // NFC/QR Scanner state
+  const [scannerMode, setScannerMode] = useState(null); // 'nfc', 'qr', or null
+  const [isScanning, setIsScanning] = useState(false);
+  const [deviceType, setDeviceType] = useState(null); // 'android', 'ios', or 'unknown'
+
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null); // {username, role}
