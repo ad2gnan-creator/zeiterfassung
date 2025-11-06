@@ -47,6 +47,8 @@ class Employee(BaseModel):
     vorname: str
     nachname: str
     abteilung: str = "Holz"  # Default: Holz, Kunststoff, Montage, Verwaltung
+    nfc_chip_id: Optional[str] = None  # NFC-Chip-ID für Android-Tablets
+    qr_code: Optional[str] = None  # QR-Code für iOS-Tablets (mindestens 8 Zeichen)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class EmployeeCreate(BaseModel):
@@ -54,12 +56,16 @@ class EmployeeCreate(BaseModel):
     vorname: str
     nachname: str
     abteilung: str = "Holz"
+    nfc_chip_id: Optional[str] = None
+    qr_code: Optional[str] = None
 
 class EmployeeUpdate(BaseModel):
     personalnummer: Optional[str] = None
     vorname: Optional[str] = None
     nachname: Optional[str] = None
     abteilung: Optional[str] = None
+    nfc_chip_id: Optional[str] = None
+    qr_code: Optional[str] = None
 
 
 # Time Entry Models
