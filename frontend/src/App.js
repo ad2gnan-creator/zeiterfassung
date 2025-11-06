@@ -281,26 +281,38 @@ function App() {
 
   // QR Code Login for iOS (processes scanned code)
   const processQRLogin = async (qrCode) => {
-    if (!qrCode) return;
+    console.log("📱 processQRLogin aufgerufen mit:", qrCode);
+    
+    if (!qrCode) {
+      console.log("❌ Kein QR-Code vorhanden");
+      return;
+    }
     
     if (qrCode.length < 8) {
+      console.log("❌ QR-Code zu kurz:", qrCode.length);
       showMessage('QR-Code muss mindestens 8 Zeichen lang sein', 'error');
       return;
     }
 
+    console.log("✅ QR-Code gültig, sende Login-Request...");
     setLoading(true);
     try {
       const response = await axios.post(`${API}/qr-login`, {
         qr_code: qrCode
       });
       
+      console.log("📡 Server-Antwort:", response.data);
+      
       if (response.data.success) {
+        console.log("✅ Login erfolgreich:", response.data.employee);
         setSelectedEmployee(response.data.employee);
         showMessage(`Willkommen ${response.data.employee.vorname} ${response.data.employee.nachname}!`);
       } else {
+        console.log("❌ Login fehlgeschlagen:", response.data.message);
         showMessage(response.data.message || 'QR-Login fehlgeschlagen', 'error');
       }
     } catch (error) {
+      console.error("❌ Fehler beim QR-Login:", error);
       showMessage('Fehler beim QR-Login', 'error');
     } finally {
       setLoading(false);
