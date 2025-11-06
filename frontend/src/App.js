@@ -714,9 +714,10 @@ function PasswordModal({ passwordData, setPasswordData, handlePasswordChange, on
 function QRScannerModal({ onClose, onScan }) {
   const scannerRef = useRef(null);
   const [error, setError] = useState(null);
-  const [isRunning, setIsRunning] = useState(false);
   const isMountedRef = useRef(true);
   const isInitializedRef = useRef(false);
+  const isStartedRef = useRef(false);
+  const isStoppingRef = useRef(false);
 
   useEffect(() => {
     // Verhindere doppelte Initialisierung (React StrictMode)
@@ -752,14 +753,15 @@ function QRScannerModal({ onClose, onScan }) {
             // QR-Code erfolgreich gescannt
             console.log("QR-Code gescannt:", decodedText);
             
-            if (isMountedRef.current) {
-              setIsRunning(false);
+            if (isMountedRef.current && !isStoppingRef.current) {
+              isStoppingRef.current = true;
               
-              // Stoppe Scanner
-              if (html5QrCode) {
+              // Stoppe Scanner nur wenn er gestartet wurde
+              if (isStartedRef.current && html5QrCode) {
+                isStartedRef.current = false;
                 html5QrCode.stop()
                   .then(() => {
-                    console.log("Scanner gestoppt");
+                    console.log("Scanner gestoppt nach Scan");
                     if (isMountedRef.current) {
                       onScan(decodedText);
                       onClose();
@@ -772,6 +774,9 @@ function QRScannerModal({ onClose, onScan }) {
                       onClose();
                     }
                   });
+              } else {
+                onScan(decodedText);
+                onClose();
               }
             }
           },
@@ -782,9 +787,7 @@ function QRScannerModal({ onClose, onScan }) {
         
         // Scanner erfolgreich gestartet
         console.log("Scanner gestartet");
-        if (isMountedRef.current) {
-          setIsRunning(true);
-        }
+        isStartedRef.current = true;
       } catch (err) {
         console.error("Fehler beim Starten des Scanners:", err);
         if (isMountedRef.current) {
@@ -798,21 +801,24 @@ function QRScannerModal({ onClose, onScan }) {
     // Cleanup
     return () => {
       isMountedRef.current = false;
-      if (scannerRef.current) {
+      if (scannerRef.current && isStartedRef.current && !isStoppingRef.current) {
+        isStoppingRef.current = true;
+        isStartedRef.current = false;
         scannerRef.current.stop()
-          .catch(err => console.error("Cleanup error:", err))
-          .finally(() => {
-            scannerRef.current = null;
-          });
+          .catch(err => console.error("Cleanup error:", err));
       }
     };
   }, [onClose, onScan]);
 
   const handleClose = () => {
-    if (scannerRef.current && isRunning) {
-      setIsRunning(false);
+    if (scannerRef.current && isStartedRef.current && !isStoppingRef.current) {
+      isStoppingRef.current = true;
+      isStartedRef.current = false;
       scannerRef.current.stop()
-        .then(() => onClose())
+        .then(() => {
+          console.log("Scanner gestoppt durch Abbrechen");
+          onClose();
+        })
         .catch(err => {
           console.error("Error stopping scanner:", err);
           onClose();
