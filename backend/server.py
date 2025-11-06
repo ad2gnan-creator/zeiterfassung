@@ -363,7 +363,7 @@ async def request_password_reset(reset_request: PasswordResetRequest):
     
     # Send email with reset link
     try:
-        reset_link = f"https://timetracker-165.preview.emergentagent.com/reset-password?token={reset_token}"
+        reset_link = f"https://trackshift-2.preview.emergentagent.com/reset-password?token={reset_token}"
         
         msg = MIMEMultipart()
         msg['From'] = settings.get("email_sender", "")
