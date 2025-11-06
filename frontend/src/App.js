@@ -336,7 +336,9 @@ function App() {
         personalnummer: editEmployee.personalnummer,
         vorname: editEmployee.vorname,
         nachname: editEmployee.nachname,
-        abteilung: editEmployee.abteilung
+        abteilung: editEmployee.abteilung,
+        nfc_chip_id: editEmployee.nfc_chip_id || '',
+        qr_code: editEmployee.qr_code || ''
       });
       showMessage('Mitarbeiter aktualisiert!');
       setShowEditModal(false);
