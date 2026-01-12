@@ -978,23 +978,13 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
         
         <div className="space-y-4 mb-8">
           {deviceType === 'android' && (
-            <>
-              <button
-                onClick={handleNFCLogin}
-                disabled={isScanning}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-12 px-6 rounded-xl shadow-xl transform transition hover:scale-105 disabled:opacity-50 text-2xl"
-              >
-                {isScanning ? '⏳ NFC-Reader aktiv...' : '🔹 NFC-Chip scannen'}
-              </button>
-              
-              <button
-                onClick={() => setShowQRScanner(true)}
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-12 px-6 rounded-xl shadow-xl transform transition hover:scale-105 disabled:opacity-50 text-2xl"
-              >
-                📱 QR-Code scannen
-              </button>
-            </>
+            <button
+              onClick={handleNFCLogin}
+              disabled={isScanning}
+              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-12 px-6 rounded-xl shadow-xl transform transition hover:scale-105 disabled:opacity-50 text-2xl"
+            >
+              {isScanning ? '⏳ NFC-Reader aktiv...' : '🔹 NFC-Chip scannen'}
+            </button>
           )}
           
           {deviceType === 'ios' && (
@@ -1020,7 +1010,7 @@ function TerminalView({ employees, selectedEmployee, setSelectedEmployee, handle
         <div className="text-center text-sm text-gray-500">
           <p className="mb-2">
             {deviceType === 'android' 
-              ? 'Verwenden Sie NFC oder QR-Code zum Anmelden' 
+              ? 'Halten Sie Ihren NFC-Chip an das Gerät oder wählen Sie manuell' 
               : deviceType === 'ios'
               ? 'Scannen Sie Ihren QR-Code oder wählen Sie manuell'
               : 'Wählen Sie Ihre Login-Methode'}
