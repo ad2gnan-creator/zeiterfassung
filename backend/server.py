@@ -470,7 +470,9 @@ async def request_password_reset(reset_request: PasswordResetRequest):
     
     # Send email with reset link
     try:
-        reset_link = f"https://trackshift-2.preview.emergentagent.com/reset-password?token={reset_token}"
+        # Verwende FRONTEND_URL aus Umgebungsvariable (fallback auf Preview für Entwicklung)
+        frontend_url = os.environ.get('FRONTEND_URL', 'https://trackshift-2.preview.emergentagent.com')
+        reset_link = f"{frontend_url}/reset-password?token={reset_token}"
         
         msg = MIMEMultipart()
         msg['From'] = settings.get("email_sender", "")
