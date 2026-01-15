@@ -133,6 +133,7 @@ class PasswordChange(BaseModel):
 
 class PasswordResetRequest(BaseModel):
     username: str
+    frontend_url: Optional[str] = None  # Frontend sendet seine eigene URL mit
 
 class NFCLogin(BaseModel):
     nfc_chip_id: str
