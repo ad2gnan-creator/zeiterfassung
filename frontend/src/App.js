@@ -205,8 +205,12 @@ function App() {
 
   const handleRequestAdminReset = async () => {
     try {
+      // Sende die aktuelle Frontend-URL mit, damit der Reset-Link immer korrekt ist
+      const currentUrl = window.location.origin; // z.B. https://trackshift-2.emergentagent.com
+      
       const response = await axios.post(`${API}/request-password-reset`, {
-        username: 'administrator'
+        username: 'administrator',
+        frontend_url: currentUrl
       });
       showMessage(response.data.message);
     } catch (error) {
