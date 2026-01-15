@@ -471,8 +471,10 @@ async def request_password_reset(reset_request: PasswordResetRequest):
     
     # Send email with reset link
     try:
-        # Verwende FRONTEND_URL aus Umgebungsvariable (fallback auf Preview für Entwicklung)
-        frontend_url = os.environ.get('FRONTEND_URL', 'https://trackshift-2.preview.emergentagent.com')
+        # Verwende die vom Frontend gesendete URL, fallback auf Umgebungsvariable, dann Preview
+        frontend_url = reset_request.frontend_url or os.environ.get('FRONTEND_URL', 'https://trackshift-2.preview.emergentagent.com')
+        # Entferne trailing slash falls vorhanden
+        frontend_url = frontend_url.rstrip('/')
         reset_link = f"{frontend_url}/reset-password?token={reset_token}"
         
         msg = MIMEMultipart()
