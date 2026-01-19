@@ -82,6 +82,8 @@ class TimeEntry(BaseModel):
 class TimeEntryCreate(BaseModel):
     personalnummer: str
     button_type: str
+    datum: Optional[str] = None  # Lokales Datum vom Frontend (YYYY-MM-DD)
+    uhrzeit: Optional[str] = None  # Lokale Uhrzeit vom Frontend (HH:MM:SS)
 
 
 # Settings Models
