@@ -265,11 +265,13 @@ async def create_time_entry(entry: TimeEntryCreate):
         # Frontend hat lokale Zeit gesendet
         datum = entry.datum
         uhrzeit = entry.uhrzeit
+        logging.info(f"✅ Verwende lokale Zeit vom Frontend: {datum} {uhrzeit}")
     else:
         # Fallback auf Server-Zeit (für Abwärtskompatibilität)
         now = datetime.now()
         datum = now.strftime("%Y-%m-%d")
         uhrzeit = now.strftime("%H:%M:%S")
+        logging.warning(f"⚠️ Frontend hat keine Zeit gesendet, verwende Server-Zeit: {datum} {uhrzeit}")
     
     entry_obj = TimeEntry(
         personalnummer=entry.personalnummer,
