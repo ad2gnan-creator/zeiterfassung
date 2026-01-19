@@ -233,9 +233,16 @@ function App() {
     if (!selectedEmployee) return;
     setLoading(true);
     try {
+      // Erfasse die lokale Zeit vom Gerät
+      const now = new Date();
+      const datum = now.toLocaleDateString('sv-SE'); // Format: YYYY-MM-DD (schwedisches Format = ISO)
+      const uhrzeit = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }); // Format: HH:MM:SS
+      
       await axios.post(`${API}/time-entries`, {
         personalnummer: selectedEmployee.personalnummer,
-        button_type: buttonType
+        button_type: buttonType,
+        datum: datum,
+        uhrzeit: uhrzeit
       });
       showMessage(`${buttonType} erfasst für ${selectedEmployee.vorname} ${selectedEmployee.nachname}`);
       setSelectedEmployee(null); // Auto-logout after button press
