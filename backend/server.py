@@ -260,12 +260,22 @@ async def create_time_entry(entry: TimeEntryCreate):
     if not employee:
         raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden")
     
-    now = datetime.now()
+    # Verwende die vom Frontend gesendete lokale Zeit, fallback auf Server-Zeit
+    if entry.datum and entry.uhrzeit:
+        # Frontend hat lokale Zeit gesendet
+        datum = entry.datum
+        uhrzeit = entry.uhrzeit
+    else:
+        # Fallback auf Server-Zeit (für Abwärtskompatibilität)
+        now = datetime.now()
+        datum = now.strftime("%Y-%m-%d")
+        uhrzeit = now.strftime("%H:%M:%S")
+    
     entry_obj = TimeEntry(
         personalnummer=entry.personalnummer,
         button_type=entry.button_type,
-        datum=now.strftime("%Y-%m-%d"),
-        uhrzeit=now.strftime("%H:%M:%S")
+        datum=datum,
+        uhrzeit=uhrzeit
     )
     
     doc = entry_obj.model_dump()
