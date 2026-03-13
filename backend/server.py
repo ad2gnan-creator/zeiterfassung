@@ -485,8 +485,16 @@ async def request_password_reset(reset_request: PasswordResetRequest):
     
     # Send email with reset link
     try:
-        # Verwende die vom Frontend gesendete URL, fallback auf Umgebungsvariable, dann Preview
-        frontend_url = reset_request.frontend_url or os.environ.get('FRONTEND_URL', 'https://trackshift-2.preview.emergentagent.com')
+        # Verwende die vom Frontend gesendete URL oder Umgebungsvariable
+        # KEIN hardcodierter Fallback mehr für Production-Deployment
+        frontend_url = reset_request.frontend_url or os.environ.get('FRONTEND_URL')
+        
+        if not frontend_url:
+            raise HTTPException(
+                status_code=500, 
+                detail="Frontend-URL nicht konfiguriert. Bitte FRONTEND_URL in Umgebungsvariablen setzen."
+            )
+        
         # Entferne trailing slash falls vorhanden
         frontend_url = frontend_url.rstrip('/')
         reset_link = f"{frontend_url}/reset-password?token={reset_token}"
