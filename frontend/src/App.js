@@ -659,6 +659,8 @@ function App() {
           currentUser={currentUser}
           handleResetUserPassword={handleResetUserPassword}
           handleClearDatabase={handleClearDatabase}
+          handleDownloadBackup={handleDownloadBackup}
+          handleRestoreBackup={handleRestoreBackup}
         />}
         
         {view === 'settings' && <SettingsView 
