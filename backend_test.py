@@ -10,7 +10,7 @@ import sys
 from typing import Dict, Any, Optional
 
 # Get backend URL from frontend .env
-BACKEND_URL = "https://trackshift-2.preview.emergentagent.com/api"
+BACKEND_URL = "https://betriebsleiter-next.preview.emergentagent.com/api"
 
 class BackendTester:
     def __init__(self):

@@ -15,7 +15,7 @@ Die App erkennt **automatisch die richtige URL**, egal wo sie deployed ist!
 ### Keine Konfiguration erforderlich! 🎉
 
 Der Administrator-Passwort-Reset-Link wird automatisch mit der korrekten Domain generiert:
-- Preview: `https://trackshift-2.preview.emergentagent.com/reset-password?token=xxx`
+- Preview: `https://betriebsleiter-next.preview.emergentagent.com/reset-password?token=xxx`
 - Production: `https://ihre-deployed-domain.com/reset-password?token=xxx`
 - Custom Domain: `https://zeiterfassung.firma.de/reset-password?token=xxx`
 
