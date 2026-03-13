@@ -1278,17 +1278,62 @@ function AdminView({ employees, newEmployee, setNewEmployee, handleAddEmployee, 
       {/* Database Management */}
       <div className="bg-white rounded-xl shadow-xl p-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">🗄️ Datenbank-Verwaltung</h2>
-        <p className="text-gray-600 mb-4">
-          ⚠️ <strong>Warnung:</strong> Das Löschen der Datenbank entfernt ALLE Zeiterfassungsdaten unwiderruflich!
-          <br/>Stellen Sie sicher, dass Sie vorher eine CSV-Datei heruntergeladen haben.
-        </p>
-        <button
-          data-testid="btn-clear-database"
-          onClick={handleClearDatabase}
-          className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-        >
-          🗑️ Alle Zeiterfassungsdaten löschen
-        </button>
+        
+        {/* Backup & Restore Section */}
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">💾 Backup & Wiederherstellung</h3>
+          <p className="text-gray-700 mb-4 text-sm">
+            Sichern Sie alle Mitarbeiter und Zeiterfassungsdaten als JSON-Datei. 
+            Perfekt für Fork → Deploy → Restore Workflows.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Backup Download Button */}
+            <button
+              onClick={handleDownloadBackup}
+              disabled={loading}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <span>📥</span>
+              <span>Backup herunterladen</span>
+            </button>
+            
+            {/* Backup Restore Button */}
+            <label className="flex-1">
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleRestoreBackup}
+                disabled={loading}
+                className="hidden"
+              />
+              <div className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors cursor-pointer text-center disabled:opacity-50 flex items-center justify-center gap-2">
+                <span>📤</span>
+                <span>Backup wiederherstellen</span>
+              </div>
+            </label>
+          </div>
+          
+          <p className="text-xs text-gray-600 mt-3">
+            ℹ️ Das Backup enthält: Mitarbeiter, Zeiteinträge, Einstellungen (ohne Passwörter)
+          </p>
+        </div>
+        
+        {/* Clear Database Section */}
+        <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+          <h3 className="text-lg font-semibold text-red-900 mb-3">🗑️ Datenbank löschen</h3>
+          <p className="text-gray-700 mb-4 text-sm">
+            ⚠️ <strong>Warnung:</strong> Das Löschen der Datenbank entfernt ALLE Zeiterfassungsdaten unwiderruflich!
+            <br/>Erstellen Sie vorher ein Backup.
+          </p>
+          <button
+            data-testid="btn-clear-database"
+            onClick={handleClearDatabase}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+          >
+            🗑️ Alle Zeiterfassungsdaten löschen
+          </button>
+        </div>
       </div>
     </div>
   );
