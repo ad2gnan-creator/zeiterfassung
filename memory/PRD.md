@@ -4,7 +4,7 @@
 Zeiterfassungsanwendung für Mitarbeiter mit NFC/QR-Code Login auf Android/iOS Tablets.
 
 ## Core Features (Implemented)
-- ✅ User/Administrator Rollen-System
+- ✅ User/Administrator/Betriebsleiter Rollen-System
 - ✅ NFC-basierter Login für Android-Geräte
 - ✅ Kamera-basierter QR-Code Scanner für iOS-Geräte
 - ✅ Mitarbeiterverwaltung mit Abteilungen
@@ -14,13 +14,14 @@ Zeiterfassungsanwendung für Mitarbeiter mit NFC/QR-Code Login auf Android/iOS T
 - ✅ CSV-Export aller Zeiterfassungsdaten
 - ✅ Backup & Restore Funktionalität (JSON)
 - ✅ Dynamische Passwort-Reset-URLs
+- ✅ **Betriebsleiter-Übersicht** mit Mitarbeiter-Status und Abteilungs-Filter
 
 ## Architecture
 
 ### Frontend (React)
 ```
 /app/frontend/src/
-├── App.js                     # Hauptkomponente (278 Zeilen)
+├── App.js                     # Hauptkomponente
 ├── config/
 │   └── api.js                 # API-Konfiguration
 ├── hooks/
@@ -34,7 +35,8 @@ Zeiterfassungsanwendung für Mitarbeiter mit NFC/QR-Code Login auf Android/iOS T
     │   ├── LoginScreen.jsx
     │   ├── TerminalView.jsx
     │   ├── AdminView.jsx
-    │   └── SettingsView.jsx
+    │   ├── SettingsView.jsx
+    │   └── BetriebsleiterView.jsx  # NEU
     └── modals/
         ├── PasswordModal.jsx
         ├── EditEmployeeModal.jsx
@@ -48,28 +50,37 @@ Zeiterfassungsanwendung für Mitarbeiter mit NFC/QR-Code Login auf Android/iOS T
 - `employees`: Mitarbeiterdaten
 - `time_entries`: Zeiteinträge
 - `settings`: App-Einstellungen
-- `users`: Benutzerkonten
+- `users`: Benutzerkonten (user, administrator, betriebsleiter)
 
 ## Credentials
 - User: `user` / `user`
+- Betriebsleiter: `betriebsleiter` / `betrieb`
 - Administrator: `administrator` / `admin`
 
-## Upcoming Tasks
+## API Endpoints (Betriebsleiter)
+- `GET /api/employee-status` - Alle Mitarbeiter mit letztem Zeiteintrag
+- `GET /api/employee-status?abteilung=Holz` - Gefiltert nach Abteilung
+- `GET /api/departments` - Liste aller Abteilungen
 
-### P0: Betriebsleiter Rolle
-- Neue Rolle für Operations Manager
-- Übersicht aller Mitarbeiter mit letztem Status
-- API: `GET /api/employee-status`
-- Frontend: Neue View-Komponente
+## Upcoming Tasks
 
 ### P1: Offline-Funktionalität
 - Lokale Speicherung bei fehlender Internetverbindung
 - Spätere Synchronisation
 
-## Refactoring History
+## Change History
+
+### 2025-03-13: Betriebsleiter-Rolle
+- Neuer Benutzer "betriebsleiter" mit Rolle "betriebsleiter"
+- Neue View `BetriebsleiterView.jsx` mit:
+  - Statistik-Dashboard (Arbeiten, Pause, Nach Pause, Feierabend, Kein Status)
+  - Abteilungs-Filter (Alle, Holz, Kunststoff, Montage, Verwaltung)
+  - Mitarbeiter-Tabelle mit letztem Status, Datum und Uhrzeit
+  - Auto-Refresh alle 30 Sekunden
+  - Farbcodierte Status-Anzeige
+- Backend-Endpoints: `/api/employee-status`, `/api/departments`
 
 ### 2025-03-13: Frontend Refactoring
-- App.js von 1620 auf 278 Zeilen reduziert
+- App.js von 1620 auf ~300 Zeilen reduziert
 - Komponenten in separate Dateien aufgeteilt
 - Custom Hooks für State-Management extrahiert
-- data-testid Attribute hinzugefügt

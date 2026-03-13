@@ -24,6 +24,7 @@ function LoginScreen({
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
             >
               <option value="user">User (Mitarbeiter)</option>
+              <option value="betriebsleiter">Betriebsleiter</option>
               <option value="administrator">Administrator</option>
             </select>
           </div>
@@ -70,6 +71,7 @@ function LoginScreen({
           <p className="text-sm text-blue-800">
             <strong>Standard-Zugangsdaten:</strong><br/>
             User: user / user<br/>
+            Betriebsleiter: betriebsleiter / betrieb<br/>
             Admin: administrator / admin
           </p>
         </div>

@@ -8,7 +8,7 @@ import { API } from './config/api';
 import { useAuth, useEmployees, useSettings, useDeviceType, useMessage } from './hooks';
 
 // Views
-import { LoginScreen, TerminalView, AdminView, SettingsView } from './components/views';
+import { LoginScreen, TerminalView, AdminView, SettingsView, BetriebsleiterView } from './components/views';
 
 // Modals
 import { PasswordModal, EditEmployeeModal } from './components/modals';
@@ -91,13 +91,24 @@ function App() {
     if (isAuthenticated) {
       loadEmployees();
       loadSettings();
+      
+      // Setze die Standard-View basierend auf der Rolle
+      if (currentUser && currentUser.role === 'betriebsleiter') {
+        setView('betriebsleiter');
+      }
     }
-  }, [isAuthenticated, loadEmployees, loadSettings]);
+  }, [isAuthenticated, loadEmployees, loadSettings, currentUser]);
 
   const handleNavigate = (targetView) => {
     if (targetView === 'terminal') {
       setView('terminal');
       setSelectedEmployee(null);
+    } else if (targetView === 'betriebsleiter') {
+      if (currentUser && (currentUser.role === 'betriebsleiter' || currentUser.role === 'admin')) {
+        setView('betriebsleiter');
+      } else {
+        showMessage('Nur Betriebsleiter und Administrator haben Zugriff', 'error');
+      }
     } else if (targetView === 'admin' || targetView === 'settings') {
       if (currentUser && currentUser.role === 'admin') {
         setView(targetView);
@@ -147,6 +158,17 @@ function App() {
               >
                 Terminal
               </button>
+              {currentUser && (currentUser.role === 'betriebsleiter' || currentUser.role === 'admin') && (
+                <button
+                  data-testid="nav-betriebsleiter-btn"
+                  onClick={() => handleNavigate('betriebsleiter')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    view === 'betriebsleiter' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Übersicht
+                </button>
+              )}
               {currentUser && currentUser.role === 'admin' && (
                 <>
                   <button
@@ -174,6 +196,7 @@ function App() {
               <span className="text-gray-700">
                 👤 {currentUser.username}
                 {currentUser.role === 'admin' && ' (Admin)'}
+                {currentUser.role === 'betriebsleiter' && ' (Betriebsleiter)'}
               </span>
               <button
                 data-testid="change-password-btn"
@@ -243,6 +266,8 @@ function App() {
           handleTestEmail={handleTestEmail}
           loading={loading}
         />}
+
+        {view === 'betriebsleiter' && <BetriebsleiterView />}
       </div>
 
       {/* Password Change Modal */}

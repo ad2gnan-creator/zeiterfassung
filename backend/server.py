@@ -455,14 +455,22 @@ async def init_users():
         # Create default users
         default_users = [
             User(username="user", password="user", role="user"),
-            User(username="administrator", password="admin", role="admin")
+            User(username="administrator", password="admin", role="admin"),
+            User(username="betriebsleiter", password="betrieb", role="betriebsleiter")
         ]
         
         for user in default_users:
             doc = user.model_dump()
             await db.users.insert_one(doc)
         
-        return {"message": "Standard-Benutzer erstellt", "users": ["user", "administrator"]}
+        return {"message": "Standard-Benutzer erstellt", "users": ["user", "administrator", "betriebsleiter"]}
+    
+    # Check if betriebsleiter exists, add if not (für bestehende Installationen)
+    betriebsleiter = await db.users.find_one({"username": "betriebsleiter"}, {"_id": 0})
+    if not betriebsleiter:
+        new_user = User(username="betriebsleiter", password="betrieb", role="betriebsleiter")
+        await db.users.insert_one(new_user.model_dump())
+        return {"message": "Betriebsleiter-Benutzer hinzugefügt"}
     
     return {"message": "Benutzer existieren bereits"}
 
@@ -674,6 +682,71 @@ async def reset_user_password():
         upsert=True
     )
     return {"message": "User-Passwort wurde auf 'user' zurückgesetzt"}
+
+
+@api_router.get("/employee-status")
+async def get_employee_status(abteilung: Optional[str] = None):
+    """
+    Gibt alle Mitarbeiter mit ihrem letzten Zeiteintrag zurück.
+    Für die Betriebsleiter-Ansicht.
+    Optional nach Abteilung filterbar.
+    """
+    # Query für Mitarbeiter
+    employee_query = {}
+    if abteilung and abteilung != "Alle":
+        employee_query["abteilung"] = abteilung
+    
+    # Alle Mitarbeiter abrufen
+    employees = await db.employees.find(employee_query, {"_id": 0}).to_list(1000)
+    
+    # Für jeden Mitarbeiter den letzten Zeiteintrag abrufen
+    result = []
+    for emp in employees:
+        # Letzten Zeiteintrag für diesen Mitarbeiter finden
+        last_entry = await db.time_entries.find_one(
+            {"personalnummer": emp["personalnummer"]},
+            {"_id": 0},
+            sort=[("timestamp", -1)]  # Neuester zuerst
+        )
+        
+        status_info = {
+            "id": emp["id"],
+            "personalnummer": emp["personalnummer"],
+            "vorname": emp["vorname"],
+            "nachname": emp["nachname"],
+            "abteilung": emp["abteilung"],
+            "last_status": None,
+            "last_time": None,
+            "last_date": None
+        }
+        
+        if last_entry:
+            status_info["last_status"] = last_entry.get("button_type")
+            status_info["last_time"] = last_entry.get("uhrzeit")
+            status_info["last_date"] = last_entry.get("datum")
+        
+        result.append(status_info)
+    
+    # Sortieren nach Nachname, dann Vorname
+    result.sort(key=lambda x: (x["nachname"].lower(), x["vorname"].lower()))
+    
+    return result
+
+
+@api_router.get("/departments")
+async def get_departments():
+    """Gibt alle verfügbaren Abteilungen zurück"""
+    # Feste Abteilungen + ggf. dynamisch aus der Datenbank
+    fixed_departments = ["Holz", "Kunststoff", "Montage", "Verwaltung"]
+    
+    # Zusätzliche Abteilungen aus der Datenbank holen
+    employees = await db.employees.find({}, {"_id": 0, "abteilung": 1}).to_list(1000)
+    db_departments = set(emp["abteilung"] for emp in employees if emp.get("abteilung"))
+    
+    # Kombinieren und sortieren
+    all_departments = sorted(set(fixed_departments) | db_departments)
+    
+    return all_departments
 
 
 @api_router.post("/verify-password")
