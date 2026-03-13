@@ -303,6 +303,109 @@ async def get_time_entries(datum: Optional[str] = None):
     return entries
 
 
+# ========== Backup & Restore Endpoints ==========
+
+@api_router.get("/backup")
+async def create_backup():
+    """Erstellt ein komplettes Backup aller Mitarbeiter und Zeiteinträge"""
+    try:
+        # Alle Mitarbeiter abrufen
+        employees = await db.employees.find({}, {"_id": 0}).to_list(10000)
+        
+        # Alle Zeiteinträge abrufen
+        time_entries = await db.time_entries.find({}, {"_id": 0}).to_list(100000)
+        
+        # Einstellungen abrufen
+        settings = await db.settings.find_one({"id": "settings"}, {"_id": 0})
+        
+        # Benutzer abrufen (ohne Passwörter aus Sicherheitsgründen)
+        users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(100)
+        
+        # Backup-Objekt erstellen
+        backup = {
+            "backup_version": "1.0",
+            "backup_date": datetime.now(timezone.utc).isoformat(),
+            "data": {
+                "employees": employees,
+                "time_entries": time_entries,
+                "settings": settings,
+                "users_info": users  # Ohne Passwörter
+            },
+            "statistics": {
+                "total_employees": len(employees),
+                "total_time_entries": len(time_entries),
+                "total_users": len(users)
+            }
+        }
+        
+        logging.info(f"Backup erstellt: {len(employees)} Mitarbeiter, {len(time_entries)} Zeiteinträge")
+        
+        return backup
+        
+    except Exception as e:
+        logging.error(f"Fehler beim Erstellen des Backups: {e}")
+        raise HTTPException(status_code=500, detail=f"Fehler beim Erstellen des Backups: {str(e)}")
+
+
+@api_router.post("/restore")
+async def restore_backup(backup: dict):
+    """Stellt ein Backup wieder her"""
+    try:
+        if not backup.get("data"):
+            raise HTTPException(status_code=400, detail="Ungültiges Backup-Format")
+        
+        data = backup["data"]
+        restored_counts = {
+            "employees": 0,
+            "time_entries": 0,
+            "settings": 0
+        }
+        
+        # Mitarbeiter wiederherstellen
+        if "employees" in data and data["employees"]:
+            # Lösche bestehende Mitarbeiter
+            await db.employees.delete_many({})
+            
+            # Füge Mitarbeiter aus Backup hinzu
+            for emp in data["employees"]:
+                await db.employees.insert_one(emp)
+            
+            restored_counts["employees"] = len(data["employees"])
+            logging.info(f"Wiederhergestellt: {restored_counts['employees']} Mitarbeiter")
+        
+        # Zeiteinträge wiederherstellen
+        if "time_entries" in data and data["time_entries"]:
+            # Lösche bestehende Zeiteinträge
+            await db.time_entries.delete_many({})
+            
+            # Füge Zeiteinträge aus Backup hinzu
+            for entry in data["time_entries"]:
+                await db.time_entries.insert_one(entry)
+            
+            restored_counts["time_entries"] = len(data["time_entries"])
+            logging.info(f"Wiederhergestellt: {restored_counts['time_entries']} Zeiteinträge")
+        
+        # Einstellungen wiederherstellen (optional)
+        if "settings" in data and data["settings"]:
+            await db.settings.update_one(
+                {"id": "settings"},
+                {"$set": data["settings"]},
+                upsert=True
+            )
+            restored_counts["settings"] = 1
+            logging.info("Einstellungen wiederhergestellt")
+        
+        return {
+            "success": True,
+            "message": "Backup erfolgreich wiederhergestellt",
+            "restored": restored_counts
+        }
+        
+    except Exception as e:
+        logging.error(f"Fehler beim Wiederherstellen des Backups: {e}")
+        raise HTTPException(status_code=500, detail=f"Fehler beim Wiederherstellen: {str(e)}")
+
+
 # ========== Settings Endpoints ==========
 
 @api_router.get("/settings", response_model=Settings)
