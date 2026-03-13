@@ -450,6 +450,81 @@ function App() {
     }
   };
 
+  // Backup erstellen und herunterladen
+  const handleDownloadBackup = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API}/backup`);
+      
+      // JSON als Datei herunterladen
+      const dataStr = JSON.stringify(response.data, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Dateiname mit Datum
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+      link.download = `zeiterfassung-backup-${dateStr}_${timeStr}.json`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      const stats = response.data.statistics;
+      showMessage(`Backup erstellt: ${stats.total_employees} Mitarbeiter, ${stats.total_time_entries} Zeiteinträge`);
+    } catch (error) {
+      showMessage('Fehler beim Erstellen des Backups', 'error');
+      console.error('Backup-Fehler:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Backup wiederherstellen
+  const handleRestoreBackup = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!window.confirm('⚠️ ACHTUNG: Alle aktuellen Daten werden durch das Backup ersetzt!\n\nMöchten Sie fortfahren?')) {
+      event.target.value = ''; // Reset file input
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const fileContent = await file.text();
+      const backupData = JSON.parse(fileContent);
+      
+      // Validiere Backup-Format
+      if (!backupData.data || !backupData.backup_version) {
+        throw new Error('Ungültiges Backup-Format');
+      }
+      
+      const response = await axios.post(`${API}/restore`, backupData);
+      
+      const restored = response.data.restored;
+      showMessage(`Backup wiederhergestellt: ${restored.employees} Mitarbeiter, ${restored.time_entries} Zeiteinträge`);
+      
+      // Daten neu laden
+      await loadEmployees();
+      
+    } catch (error) {
+      if (error.message === 'Ungültiges Backup-Format') {
+        showMessage('Ungültige Backup-Datei', 'error');
+      } else {
+        showMessage('Fehler beim Wiederherstellen des Backups', 'error');
+      }
+      console.error('Restore-Fehler:', error);
+    } finally {
+      setLoading(false);
+      event.target.value = ''; // Reset file input
+    }
+  };
+
   const handleTestEmail = async () => {
     setLoading(true);
     try {
