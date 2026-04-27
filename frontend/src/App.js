@@ -8,13 +8,14 @@ import { API } from './config/api';
 import { useAuth, useEmployees, useSettings, useDeviceType, useMessage } from './hooks';
 
 // Views
-import { LoginScreen, TerminalView, AdminView, SettingsView, BetriebsleiterView } from './components/views';
+import { LoginScreen, TerminalView, AdminView, SettingsView, BetriebsleiterView, ResetPasswordView } from './components/views';
 
 // Modals
 import { PasswordModal, EditEmployeeModal } from './components/modals';
 
 function App() {
   const [view, setView] = useState('terminal');
+  const [resetToken, setResetToken] = useState(null);
 
   // NFC/QR Scanner state
   const [isScanning, setIsScanning] = useState(false);
@@ -25,6 +26,24 @@ function App() {
 
   // Message toast
   const { message, showMessage } = useMessage();
+
+  // Check for reset token in URL on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const path = window.location.pathname;
+    
+    if (path === '/reset-password' && token) {
+      setResetToken(token);
+    }
+  }, []);
+
+  // Handle reset password completion
+  const handleResetComplete = () => {
+    setResetToken(null);
+    // Clear URL parameters
+    window.history.replaceState({}, document.title, '/');
+  };
 
   // Auth hook
   const {
@@ -127,6 +146,11 @@ function App() {
   const handleRestoreBackupWrapper = (event) => {
     handleRestoreBackup(event, loadEmployees);
   };
+
+  // Show reset password view if token is present
+  if (resetToken) {
+    return <ResetPasswordView token={resetToken} onComplete={handleResetComplete} />;
+  }
 
   if (!isAuthenticated) {
     return <LoginScreen 

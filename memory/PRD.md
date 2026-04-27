@@ -70,6 +70,11 @@ Zeiterfassungsanwendung für Mitarbeiter mit NFC/QR-Code Login auf Android/iOS T
 
 ## Change History
 
+### 2025-03-13: Passwort-Reset Bug Fix
+- Neue `ResetPasswordView.jsx` Komponente erstellt
+- URL-Parameter `/reset-password?token=...` wird jetzt korrekt verarbeitet
+- Vollständiger Reset-Flow: Link klicken → Neues Passwort eingeben → Erfolgsmeldung → Zur Anmeldung
+
 ### 2025-03-13: Betriebsleiter-Rolle
 - Neuer Benutzer "betriebsleiter" mit Rolle "betriebsleiter"
 - Neue View `BetriebsleiterView.jsx` mit:
